@@ -3,7 +3,7 @@
 const express = require('express');
 const multer  = require('multer');
 const { DatabaseSync } = require('node:sqlite');
-const { timingSafeEqual } = require('node:crypto');
+const { createHash, timingSafeEqual } = require('node:crypto');
 const path    = require('path');
 const fs      = require('fs');
 const { v4: uuidv4 } = require('uuid');
@@ -15,9 +15,18 @@ const PORT        = process.env.PORT || 3000;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const THUMBS_DIR  = path.join(__dirname, 'uploads', '_thumbs');
 const DB_PATH     = process.env.DB_PATH || path.join(__dirname, 'database.sqlite');
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.ADMIN_KEY || '';
-const MAX_FILE_MB = parseInt(process.env.MAX_FILE_MB || '100', 10);
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const parsedMaxFileMb = parseInt(process.env.MAX_FILE_MB || '100', 10);
 const MAX_COMMENT_LENGTH = 500;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const INDEX_PATH   = path.join(__dirname, 'public', 'index.html');
+
+function getMaxFileMb(value) {
+  if (!Number.isFinite(value) || value <= 0 || value > 500) return 100;
+  return value;
+}
+
+const MAX_FILE_MB = getMaxFileMb(parsedMaxFileMb);
 
 // ─── Setup directories ────────────────────────────────────────────────────────
 [UPLOADS_DIR, THUMBS_DIR].forEach(dir => {
@@ -38,8 +47,8 @@ db.exec(`
   );
 `);
 
-const photoColumns = db.prepare(`PRAGMA table_info(photos)`).all();
-if (!photoColumns.some(column => column.name === 'comment')) {
+const tableColumns = db.prepare(`PRAGMA table_info(photos)`).all();
+if (!tableColumns.some(column => column.name === 'comment')) {
   db.exec(`ALTER TABLE photos ADD COLUMN comment TEXT DEFAULT ''`);
 }
 
@@ -53,7 +62,13 @@ const stmtDelete  = db.prepare(`DELETE FROM photos WHERE id = ?`);
 // ─── Express ──────────────────────────────────────────────────────────────────
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+
+function renderIndexHtml() {
+  return fs.readFileSync(INDEX_PATH, 'utf8')
+    .replaceAll('__MAX_FILE_MB__', String(MAX_FILE_MB))
+    .replaceAll('__MAX_COMMENT_LENGTH__', String(MAX_COMMENT_LENGTH));
+}
 
 // ─── Multer ───────────────────────────────────────────────────────────────────
 const ALLOWED_MIME = /^image\/(jpeg|jpg|png|gif|webp|heic|heif|avif)$/i;
@@ -102,14 +117,18 @@ async function ensureThumb(filename) {
 }
 
 function getCommentValue(value) {
-  return String(value || '').trim().slice(0, MAX_COMMENT_LENGTH);
+  if (value === null || value === undefined) return '';
+  return String(value).trim().slice(0, MAX_COMMENT_LENGTH);
+}
+
+function isValidDeviceId(value) {
+  return UUID_PATTERN.test(String(value || '').trim());
 }
 
 function isAdminPasswordValid(password) {
   if (!ADMIN_PASSWORD || typeof password !== 'string') return false;
-  const expected = Buffer.from(ADMIN_PASSWORD);
-  const received = Buffer.from(password);
-  if (expected.length !== received.length) return false;
+  const expected = createHash('sha256').update(ADMIN_PASSWORD).digest();
+  const received = createHash('sha256').update(password).digest();
   return timingSafeEqual(expected, received);
 }
 
@@ -127,8 +146,12 @@ function requireAdmin(req, res, next) {
 function deletePhotoFiles(photo) {
   const filePath  = path.join(UPLOADS_DIR, photo.filename);
   const thumbPath = path.join(THUMBS_DIR, photo.filename + '.webp');
-  fs.unlink(filePath,  () => {});
-  fs.unlink(thumbPath, () => {});
+  fs.unlink(filePath, err => {
+    if (err && err.code !== 'ENOENT') console.error('Datei konnte nicht gelöscht werden:', err.message);
+  });
+  fs.unlink(thumbPath, err => {
+    if (err && err.code !== 'ENOENT') console.error('Thumbnail konnte nicht gelöscht werden:', err.message);
+  });
 }
 
 // ─── Rate limiters ────────────────────────────────────────────────────────────
@@ -175,9 +198,20 @@ const fileLimiter = rateLimit({
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 // GET /api/photos – list all
+app.get('/', (_req, res) => {
+  res.type('html').send(renderIndexHtml());
+});
+
 app.get('/api/photos', (_req, res) => {
   const photos = stmtAll.all();
   res.json(photos);
+});
+
+app.get('/api/config', (_req, res) => {
+  res.json({
+    maxFileMb: MAX_FILE_MB,
+    maxCommentLength: MAX_COMMENT_LENGTH
+  });
 });
 
 app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
@@ -196,10 +230,12 @@ app.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) 
 
   const deviceId = (req.body.device_id || '').trim();
   const comment = getCommentValue(req.body.comment);
-  if (!deviceId || deviceId.length < 8) {
+  if (!isValidDeviceId(deviceId)) {
     // clean up
-    fs.unlink(req.file.path, () => {});
-    return res.status(400).json({ error: 'Ungültige Geräte-ID.' });
+    fs.unlink(req.file.path, err => {
+      if (err && err.code !== 'ENOENT') console.error('Upload-Datei konnte nicht bereinigt werden:', err.message);
+    });
+    return res.status(400).json({ error: 'Ungültige Geräte-ID. Bitte Seite neu laden und erneut versuchen.' });
   }
 
   const photo = {
@@ -307,4 +343,5 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`✨ Hochzeits-Galerie läuft auf http://localhost:${PORT}`);
   if (ADMIN_PASSWORD) console.log('🔐 Admin-Passwort ist gesetzt.');
+  if (!ADMIN_PASSWORD) console.log('ℹ️ Admin-Bereich bleibt deaktiviert, bis ADMIN_PASSWORD gesetzt ist.');
 });

@@ -27,7 +27,9 @@ Alle Bilder liegen auf deinem Server und gehen nie verloren.
 
 ### 2. Domain (optional, aber schön)
 
-Auf [namecheap.com](https://www.namecheap.com) oder direkt bei [Hetzner](https://www.hetzner.com/domainregistration) eine Domain kaufen (z. B. `desiree-patrick-hochzeit.de`, ~€10/Jahr).
+Auf [namecheap.com](https://www.namecheap.com) oder direkt bei [Hetzner](https://www.hetzner.com/domainregistration) eine Domain kaufen (z. B. `eure-hochzeit.de`, ~€10/Jahr).
+
+> **Wichtig:** Ersetze `eure-hochzeit.de` in allen folgenden Beispielen immer durch deine echte Domain.
 
 DNS-Eintrag setzen:
 ```
@@ -45,7 +47,11 @@ ssh root@<deine-ip>
 
 Node.js installieren:
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+# Script zuerst herunterladen und kurz prüfen, bevor du es ausführst
+curl -fsSLo /tmp/nodesource_setup.sh https://deb.nodesource.com/setup_22.x
+less /tmp/nodesource_setup.sh
+# wenn NodeSource später Prüfsummen oder Signaturen bereitstellt, diese zusätzlich prüfen
+bash /tmp/nodesource_setup.sh
 apt-get install -y nodejs
 ```
 
@@ -87,13 +93,7 @@ pm2 save
 pm2 startup   # zeigt einen Befehl an, den du ausführen musst
 ```
 
-Optional: Admin-Passwort setzen (damit du den Admin-Bereich entsperren und alle oder ausgewählte Fotos löschen kannst):
-```bash
-pm2 start server.js --name "hochzeit" --env production -- \
-  -e "ADMIN_PASSWORD=mein-geheimes-passwort-hier"
-```
-
-Oder mit `.env`-Datei:
+Admin-Passwort am besten mit `.env`-Datei setzen (damit es nicht in Shell-History oder Prozesslisten landet):
 ```bash
 cat > /var/www/hochzeit/.env << 'EOF'
 PORT=3000
@@ -118,7 +118,7 @@ Inhalt:
 ```nginx
 server {
     listen 80;
-    server_name desiree-patrick-hochzeit.de www.desiree-patrick-hochzeit.de;
+    server_name eure-hochzeit.de www.eure-hochzeit.de;
     # Oder: server_name <deine-ip>;
 
     client_max_body_size 200M;   # max. Upload-Größe
@@ -146,10 +146,10 @@ nginx -t && systemctl reload nginx
 ### 7. HTTPS (SSL) einrichten
 
 ```bash
-certbot --nginx -d desiree-patrick-hochzeit.de -d www.desiree-patrick-hochzeit.de
+certbot --nginx -d eure-hochzeit.de -d www.eure-hochzeit.de
 ```
 
-Fertig! Die App ist jetzt unter `https://desiree-patrick-hochzeit.de` erreichbar. 🎉
+Fertig! Die App ist jetzt unter `https://eure-hochzeit.de` erreichbar. 🎉
 
 ---
 

@@ -630,7 +630,7 @@
       <input type="file" id="fileInput" accept="image/*" capture="environment" multiple />
       <span class="drop-icon">📷</span>
       <h2>Fotos hochladen</h2>
-      <p>Hier tippen oder Bilder reinziehen<br><small>Smartphone-freundlich · JPEG · PNG · WebP · HEIC — bis 100 MB je Bild</small></p>
+      <p>Hier tippen oder Bilder reinziehen<br><small id="uploadHint">Smartphone-freundlich · JPEG · PNG · WebP · HEIC — bis __MAX_FILE_MB__ MB je Bild</small></p>
     </div>
 
     <div class="preview-strip" id="previewStrip"></div>
@@ -640,10 +640,10 @@
       <textarea
         id="messageInput"
         class="message-input"
-        maxlength="500"
+        maxlength="__MAX_COMMENT_LENGTH__"
         placeholder="z. B. 'Was für ein wunderschöner Tag 💛' oder 'Alles Liebe für euch zwei!'"
       ></textarea>
-      <div class="field-help">Die Nachricht wird zusammen mit den ausgewählten Bildern angezeigt.</div>
+      <div class="field-help" id="messageHelp">Die Nachricht wird zusammen mit den ausgewählten Bildern angezeigt (max. __MAX_COMMENT_LENGTH__ Zeichen).</div>
     </div>
 
     <button class="upload-btn" id="uploadBtn" disabled>Fotos mit Nachricht hochladen</button>
@@ -727,19 +727,28 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Device ID  –  stable UUID stored in localStorage
    ═══════════════════════════════════════════════════════════════════════════ */
+const STORAGE_KEYS = {
+  deviceId: 'hochzeit_galerie_device_id',
+  legacyDeviceId: 'wedding_device_id',
+  myPhotoIds: 'hochzeit_galerie_my_photo_ids',
+  legacyMyPhotoIds: 'my_photo_ids'
+};
+
 function getDeviceId() {
-  let id = localStorage.getItem('wedding_device_id');
+  let id = localStorage.getItem(STORAGE_KEYS.deviceId) || localStorage.getItem(STORAGE_KEYS.legacyDeviceId);
   if (!id || id.length < 8) {
     // Crypto-random UUID
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       id = crypto.randomUUID();
     } else {
+      // Nur Fallback für Geräteerkennung in alten Browsern; nicht für Auth/Sicherheit.
+      console.warn('crypto.randomUUID ist nicht verfügbar. Geräte-ID-Fallback wird verwendet.');
       id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
         const r = Math.random() * 16 | 0;
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
       });
     }
-    localStorage.setItem('wedding_device_id', id);
+    localStorage.setItem(STORAGE_KEYS.deviceId, id);
   }
   return id;
 }
@@ -752,6 +761,10 @@ let photos     = [];   // [{id, filename, original_name, uploaded_at, size}]
 let lbIndex    = 0;
 let pendingFiles = [];
 let selectedAdminIds = new Set();
+let appConfig = {
+  maxFileMb: 100,
+  maxCommentLength: 500
+};
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Toast helper
@@ -795,6 +808,25 @@ async function loadGallery() {
     document.getElementById('photoGrid').innerHTML =
       '<div class="empty-state"><span class="empty-icon">⚠️</span><p>Galerie konnte nicht geladen werden.</p></div>';
   }
+}
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('config');
+    const data = await res.json();
+    appConfig.maxFileMb = data.maxFileMb || appConfig.maxFileMb;
+    appConfig.maxCommentLength = data.maxCommentLength || appConfig.maxCommentLength;
+  } catch (_e) {
+    // keep defaults
+  }
+
+  document.getElementById('uploadHint').textContent =
+    `Smartphone-freundlich · JPEG · PNG · WebP · HEIC — bis ${appConfig.maxFileMb} MB je Bild`;
+  messageInput.maxLength = appConfig.maxCommentLength;
+  messageInput.setAttribute('maxlength', String(appConfig.maxCommentLength));
+  document.getElementById('messageHelp').textContent =
+    `Die Nachricht wird zusammen mit den ausgewählten Bildern angezeigt (max. ${appConfig.maxCommentLength} Zeichen).`;
 }
 
 function renderGallery() {
@@ -869,16 +901,21 @@ function renderGallery() {
 // Track uploaded photo IDs per device so delete button is shown even when server
 // doesn't expose device_id in the listing (privacy).
 function getMyPhotoIds() {
-  try { return JSON.parse(localStorage.getItem('my_photo_ids') || '[]'); }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.myPhotoIds) || localStorage.getItem(STORAGE_KEYS.legacyMyPhotoIds) || '[]';
+    const ids = JSON.parse(raw);
+    localStorage.setItem(STORAGE_KEYS.myPhotoIds, JSON.stringify(ids));
+    return ids;
+  }
   catch { return []; }
 }
 function addMyPhotoId(id) {
   const ids = getMyPhotoIds();
-  if (!ids.includes(id)) { ids.push(id); localStorage.setItem('my_photo_ids', JSON.stringify(ids)); }
+  if (!ids.includes(id)) { ids.push(id); localStorage.setItem(STORAGE_KEYS.myPhotoIds, JSON.stringify(ids)); }
 }
 function removeMyPhotoId(id) {
   const ids = getMyPhotoIds().filter(x => x !== id);
-  localStorage.setItem('my_photo_ids', JSON.stringify(ids));
+  localStorage.setItem(STORAGE_KEYS.myPhotoIds, JSON.stringify(ids));
 }
 
 function markOwnPhotos() {
@@ -924,9 +961,11 @@ function openLightbox(index) {
   const img = document.getElementById('lbImg');
   const caption = document.getElementById('lbCaption');
   const photo = photos[lbIndex];
+  const captionText = document.getElementById('lbCaptionText');
   img.src   = `/uploads/${encodeURIComponent(photos[lbIndex].filename)}`;
   document.getElementById('lbCaptionTitle').textContent = photo.original_name || 'Foto';
-  document.getElementById('lbCaptionText').textContent = photo.comment || 'Keine Grußbotschaft hinterlegt.';
+  captionText.textContent = photo.comment || '';
+  captionText.hidden = !photo.comment;
   caption.hidden = false;
   lb.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1141,7 +1180,7 @@ document.getElementById('deleteAllBtn').addEventListener('click', async () => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Löschen fehlgeschlagen');
-    localStorage.removeItem('my_photo_ids');
+    localStorage.removeItem(STORAGE_KEYS.myPhotoIds);
     selectedAdminIds = new Set();
     showToast(`${data.deleted || 0} Bilder gelöscht`, 'red');
     loadGallery();
@@ -1191,7 +1230,7 @@ function updateAdminUi() {
 
 /* ── Init ── */
 updateAdminUi();
-loadGallery();
+loadConfig().then(loadGallery);
 </script>
 </body>
 </html>
