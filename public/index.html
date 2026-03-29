@@ -15,15 +15,30 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --cream:   #fdf8f2;
-      --blush:   #f0d5c8;
-      --rose:    #c9837a;
-      --gold:    #b8965a;
-      --dark:    #3a2e2e;
-      --mid:     #7a6060;
-      --light:   #e8d5c9;
+      --cream:   #fcf7f2;
+      --blush:   #f6e6e6;
+      --rose:    #dbafb5;
+      --gold:    #f2cb87;
+      --dark:    #5d534d;
+      --mid:     #8e7d74;
+      --light:   #e9ddd3;
       --white:   #ffffff;
-      --shadow:  0 4px 24px rgba(58,46,46,.12);
+      --paper:   #fffdf9;
+      --surface: rgba(255,255,255,.82);
+      --surface-strong: rgba(255,255,255,.92);
+      --surface-tint: rgba(239,225,219,.72);
+      --border-soft: rgba(202,184,174,.30);
+      --header-start: #f5dde5;
+      --header-mid: #fbf6ef;
+      --header-end: #dde9ef;
+      --accent-soft: #fbf2ec;
+      --secondary: #cdddc6;
+      --secondary-strong: #9ab08d;
+      --pill-bg: #f8ece8;
+      --pill-text: #ae7d85;
+      --overlay-start: rgba(93,83,77,.52);
+      --overlay-soft: rgba(93,83,77,.42);
+      --shadow:  0 18px 42px rgba(93,83,77,.10);
       --radius:  14px;
       --font:    'Georgia', 'Times New Roman', serif;
       --sans:    system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -33,7 +48,12 @@
     html { scroll-behavior: smooth; }
     body {
       font-family: var(--sans);
-      background: var(--cream);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(243, 208, 220, .28), transparent 20%),
+        radial-gradient(circle at 88% 12%, rgba(196, 214, 241, .22), transparent 18%),
+        radial-gradient(circle at 24% 48%, rgba(249, 222, 171, .14), transparent 18%),
+        radial-gradient(circle at 80% 52%, rgba(201, 228, 205, .18), transparent 16%),
+        linear-gradient(180deg, var(--paper) 0%, #fffdf9 42%, var(--cream) 78%, var(--blush) 100%);
       color: var(--dark);
       min-height: 100vh;
       padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
@@ -41,23 +61,39 @@
 
     /* ── Header ─────────────────────────────────────────────────────────────── */
     header {
-      background: linear-gradient(135deg, #3a2e2e 0%, #6b4c4c 60%, #9e7070 100%);
-      color: var(--cream);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.72) 28%, rgba(255,255,255,.86) 58%, rgba(255,249,244,.92) 100%),
+        url('/theme-background.png') center bottom / cover no-repeat;
+      color: var(--dark);
       text-align: center;
-      padding: 3.5rem 1.5rem 3rem;
+      padding: 3.5rem 1.5rem 11.5rem;
       position: relative;
       overflow: hidden;
+      border-bottom: 1px solid rgba(186, 167, 153, .18);
     }
     header::before {
       content: '';
       position: absolute; inset: 0;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='1.5' fill='rgba(255,255,255,.08)'/%3E%3C/svg%3E") repeat;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='rgba(160,140,125,.08)' stroke-width='1'%3E%3Cpath d='M0 26h120M0 56h120M0 86h120'/%3E%3Cpath d='M22 0v120M52 0v120M82 0v120M112 0v120'/%3E%3C/g%3E%3C/svg%3E") repeat;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 230px;
+      background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,.06) 70%, rgba(255,248,242,.55) 100%);
+      opacity: 1;
       pointer-events: none;
     }
     .header-rings {
       font-size: 2.4rem;
       margin-bottom: .5rem;
       display: block;
+      filter: saturate(.8);
     }
     header h1 {
       font-family: var(--font);
@@ -69,7 +105,7 @@
     }
     header p {
       font-size: 1.05rem;
-      opacity: .8;
+      opacity: .9;
       max-width: 480px;
       margin: 0 auto;
       line-height: 1.6;
@@ -82,9 +118,9 @@
       padding: 0 1rem;
     }
     .section-card {
-      background: rgba(255,255,255,.88);
+      background: var(--surface);
       box-shadow: var(--shadow);
-      border: 1px solid rgba(201,131,122,.12);
+      border: 1px solid var(--border-soft);
       border-radius: 22px;
       padding: 1rem;
       backdrop-filter: blur(6px);
@@ -97,15 +133,98 @@
       margin-top: 1rem;
       padding: .45rem .85rem;
       border-radius: 999px;
-      background: rgba(255,255,255,.18);
+      background: rgba(255,255,255,.74);
+      box-shadow: 0 10px 24px rgba(94,74,67,.08);
       font-size: .82rem;
       font-weight: 600;
       letter-spacing: .01em;
     }
+    .theme-switcher {
+      display: none;
+      margin: 1.25rem auto 0;
+      width: min(100%, 640px);
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(214,187,176,.34);
+      border-radius: 24px;
+      padding: .85rem 1rem 1rem;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 18px 34px rgba(68,40,46,.10);
+    }
+    .theme-switcher-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      text-align: left;
+      flex-wrap: wrap;
+    }
+    .theme-switcher-label {
+      display: block;
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      opacity: .72;
+      margin-bottom: .25rem;
+    }
+    .theme-switcher-name {
+      font-family: var(--font);
+      font-size: 1.25rem;
+      line-height: 1.2;
+    }
+    .theme-switcher-copy {
+      margin-top: .2rem;
+      font-size: .9rem;
+      line-height: 1.45;
+      opacity: .82;
+    }
+    .theme-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+    }
+    .theme-btn {
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.9);
+      color: var(--dark);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform var(--trans), background var(--trans);
+      backdrop-filter: blur(6px);
+    }
+    .theme-btn:hover {
+      background: rgba(255,255,255,.98);
+      transform: translateY(-1px);
+    }
+    .theme-palette {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      flex-wrap: wrap;
+      margin-top: .8rem;
+      justify-content: center;
+    }
+    .theme-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.55);
+      box-shadow: 0 2px 10px rgba(58,46,46,.12);
+    }
+    .theme-counter {
+      margin-left: .15rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      opacity: .8;
+    }
     .drop-zone {
       border: 2.5px dashed var(--light);
       border-radius: var(--radius);
-      background: var(--white);
+      background: var(--surface-strong);
       padding: 2.5rem 1.5rem;
       text-align: center;
       cursor: pointer;
@@ -114,7 +233,7 @@
     }
     .drop-zone:hover, .drop-zone.drag-over {
       border-color: var(--rose);
-      background: #fdf5f2;
+      background: var(--accent-soft);
       transform: translateY(-2px);
     }
     .drop-zone input[type="file"] {
@@ -135,7 +254,7 @@
       width: 100%;
       margin-top: 1rem;
       padding: .9rem 1.5rem;
-      background: linear-gradient(135deg, var(--rose), #a86060);
+      background: linear-gradient(135deg, var(--rose), var(--secondary-strong));
       color: var(--white);
       border: none;
       border-radius: 50px;
@@ -208,7 +327,7 @@
       padding: .9rem 1rem;
       font: inherit;
       color: var(--dark);
-      background: #fff;
+      background: var(--surface-strong);
       resize: vertical;
       min-height: 104px;
       transition: border-color var(--trans), box-shadow var(--trans);
@@ -220,7 +339,7 @@
     .message-input:focus, .admin-password-input:focus {
       outline: none;
       border-color: var(--rose);
-      box-shadow: 0 0 0 4px rgba(201,131,122,.12);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--rose) 18%, transparent);
     }
     .button-row {
       display: flex;
@@ -274,19 +393,51 @@
       transition: border-color var(--trans), color var(--trans);
     }
     .refresh-btn:hover { border-color: var(--rose); color: var(--rose); }
-
-    /* Masonry grid */
-    .photo-grid {
-      columns: 2;
-      column-gap: .8rem;
+    .gallery-tabs {
+      display: none;
+      align-items: center;
+      gap: .45rem;
+      padding: .25rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid var(--border-soft);
     }
-    @media (min-width: 540px)  { .photo-grid { columns: 3; } }
-    @media (min-width: 800px)  { .photo-grid { columns: 4; } }
-    @media (min-width: 1100px) { .photo-grid { columns: 5; } }
+    .gallery-tabs.show {
+      display: inline-flex;
+    }
+    .gallery-tab {
+      border: none;
+      background: transparent;
+      color: var(--mid);
+      padding: .45rem .9rem;
+      border-radius: 999px;
+      font-size: .85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--trans), color var(--trans), transform var(--trans);
+    }
+    .gallery-tab:hover {
+      color: var(--dark);
+      transform: translateY(-1px);
+    }
+    .gallery-tab.active {
+      background: linear-gradient(135deg, var(--rose), var(--secondary-strong));
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(93,83,77,.12);
+    }
+
+    /* Stable grid layout across desktop and iOS Safari */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .8rem;
+      align-items: start;
+    }
+    @media (min-width: 540px)  { .photo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (min-width: 800px)  { .photo-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @media (min-width: 1100px) { .photo-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 
     .photo-card {
-      break-inside: avoid;
-      margin-bottom: .8rem;
       border-radius: var(--radius);
       overflow: hidden;
       position: relative;
@@ -295,7 +446,7 @@
       background: var(--light);
       transition: transform var(--trans), box-shadow var(--trans);
     }
-    .photo-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(58,46,46,.18); }
+    .photo-card:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(58,46,46,.18); }
     .photo-card img {
       display: block;
       width: 100%;
@@ -306,7 +457,7 @@
 
     .card-overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(40,20,20,.55) 0%, transparent 50%);
+      background: linear-gradient(to top, var(--overlay-start) 0%, transparent 50%);
       opacity: 0;
       transition: opacity var(--trans);
       display: flex;
@@ -317,7 +468,7 @@
     .photo-card:hover .card-overlay { opacity: 1; }
     .card-body {
       padding: .9rem .95rem 1rem;
-      background: rgba(255,255,255,.95);
+      background: var(--surface-strong);
     }
     .card-meta {
       display: flex;
@@ -345,14 +496,33 @@
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
+    .card-admin-meta {
+      margin-top: .65rem;
+      padding-top: .6rem;
+      border-top: 1px solid var(--border-soft);
+      font-size: .76rem;
+      color: var(--mid);
+      line-height: 1.45;
+    }
+    .card-admin-meta strong {
+      color: var(--dark);
+    }
+    .card-admin-meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .74rem;
+      background: rgba(255,255,255,.72);
+      padding: .08rem .35rem;
+      border-radius: 8px;
+      word-break: break-all;
+    }
     .comment-pill {
       display: inline-flex;
       align-items: center;
       gap: .3rem;
       padding: .22rem .55rem;
       border-radius: 999px;
-      background: #f8ece4;
-      color: var(--rose);
+      background: var(--pill-bg);
+      color: var(--pill-text);
       font-weight: 600;
     }
     .delete-btn {
@@ -397,19 +567,26 @@
       font-weight: 700;
     }
     .delete-btn:hover { background: #fff; }
-    .photo-card.mine .card-overlay { opacity: 1; }
     .photo-card.mine .delete-btn { display: inline-block; }
-    .photo-card.mine .card-overlay { background: linear-gradient(to top, rgba(40,20,20,.45) 0%, transparent 55%); opacity: 0; }
+    .photo-card.mine .card-overlay { background: linear-gradient(to top, var(--overlay-soft) 0%, transparent 55%); opacity: 0; }
     .photo-card.mine:hover .card-overlay { opacity: 1; }
     .admin-mode .card-overlay,
     .admin-mode.photo-card .card-overlay,
     .photo-card.admin-mode .card-overlay { opacity: 1; }
     .admin-mode .select-checkbox,
     .photo-card.admin-mode .select-checkbox { display: inline-block; }
+    @media (hover: none), (pointer: coarse) {
+      .photo-card.mine .card-overlay,
+      .admin-mode .card-overlay,
+      .admin-mode.photo-card .card-overlay,
+      .photo-card.admin-mode .card-overlay {
+        opacity: 1;
+      }
+    }
 
     /* Loading skeleton */
     .skeleton {
-      background: linear-gradient(90deg, var(--light) 25%, #e0cfc4 50%, var(--light) 75%);
+      background: linear-gradient(90deg, var(--light) 25%, var(--surface-tint) 50%, var(--light) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
       border-radius: var(--radius);
@@ -431,7 +608,7 @@
     .lightbox {
       display: none;
       position: fixed; inset: 0;
-      background: rgba(20,12,12,.9);
+      background: rgba(30,18,20,.88);
       z-index: 100;
       align-items: center;
       justify-content: center;
@@ -456,7 +633,7 @@
       object-fit: contain;
     }
     .lb-caption {
-      background: rgba(22,12,12,.92);
+      background: rgba(35,22,25,.92);
       color: #fff;
       padding: .95rem 1rem;
       line-height: 1.55;
@@ -515,6 +692,27 @@
       margin-top: 3rem;
     }
     footer a { color: var(--rose); text-decoration: none; }
+    .device-id-note {
+      margin-top: .9rem;
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: .45rem;
+      padding: .55rem .85rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.7);
+      border: 1px solid var(--border-soft);
+      color: var(--dark);
+      font-size: .78rem;
+    }
+    .device-id-note strong {
+      font-weight: 700;
+    }
+    .device-id-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      user-select: all;
+      word-break: break-all;
+    }
 
     /* ── Toast ───────────────────────────────────────────────────────────────── */
     .toast {
@@ -540,7 +738,7 @@
       padding: 0 1rem;
     }
     .admin-card {
-      background: linear-gradient(135deg, rgba(58,46,46,.96), rgba(88,60,60,.96));
+      background: linear-gradient(135deg, color-mix(in srgb, var(--header-start) 72%, #483437), color-mix(in srgb, var(--header-mid) 68%, #5c4044));
       color: #fff;
     }
     .admin-header {
@@ -575,6 +773,15 @@
     .admin-card .upload-btn {
       margin-top: 0;
     }
+    .secondary-admin-btn {
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+    }
+    .secondary-admin-btn:hover {
+      opacity: 1;
+      background: rgba(255,255,255,.22);
+    }
     .admin-card .refresh-btn {
       color: #fff;
       border-color: rgba(255,255,255,.35);
@@ -583,6 +790,16 @@
     @media (max-width: 640px) {
       header {
         padding: 2.6rem 1rem 2.3rem;
+      }
+      .theme-switcher {
+        padding: .8rem .85rem .9rem;
+      }
+      .theme-switcher-head {
+        align-items: flex-start;
+      }
+      .theme-controls {
+        width: 100%;
+        justify-content: space-between;
       }
       .section-card, .admin-card {
         border-radius: 18px;
@@ -594,12 +811,19 @@
       .gallery-header {
         gap: .65rem;
       }
+      .gallery-tabs {
+        width: 100%;
+        justify-content: stretch;
+      }
+      .gallery-tab {
+        flex: 1 1 0;
+      }
       .refresh-btn, .upload-btn, .delete-btn {
         min-height: 46px;
       }
       .photo-grid {
-        columns: 2;
-        column-gap: .65rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .65rem;
       }
       .button-row {
         display: grid;
@@ -621,6 +845,21 @@
   <h1>Desirée &amp; Patrick</h1>
   <p>Teilt eure schönsten Momente von unserem großen Tag!<br>Alle Fotos landen direkt in unserer gemeinsamen Galerie.</p>
   <div class="mobile-note">📱 Mobile-optimierte Webapp · direkt im Browser</div>
+  <div class="theme-switcher" aria-label="Farbschema wechseln">
+    <div class="theme-switcher-head">
+      <div>
+        <span class="theme-switcher-label">Farbwelten testen</span>
+        <div class="theme-switcher-name" id="themeName">Wiesenmorgen</div>
+        <p class="theme-switcher-copy" id="themeDescription">Sanft, frisch und romantisch mit warmem Blush und zartem Salbei.</p>
+      </div>
+      <div class="theme-controls">
+        <button class="theme-btn" id="themePrevBtn" type="button" aria-label="Vorheriges Farbschema">‹</button>
+        <button class="theme-btn" id="themeNextBtn" type="button" aria-label="Nächstes Farbschema">›</button>
+        <span class="theme-counter" id="themeCounter">1 / 6</span>
+      </div>
+    </div>
+    <div class="theme-palette" id="themePalette" aria-hidden="true"></div>
+  </div>
 </header>
 
 <!-- ── Upload ── -->
@@ -657,7 +896,7 @@
     <div class="admin-header">
       <div>
         <h3>Admin-Bereich</h3>
-        <p class="admin-subtitle">Geschützt per Passwort. Hier kannst du ausgewählte Bilder oder die komplette Galerie löschen.</p>
+        <p class="admin-subtitle">Geschützt per Passwort. Ausgewählte Bilder landen zuerst im Archiv und können dort endgültig gelöscht werden.</p>
       </div>
       <button class="refresh-btn" id="adminToggleBtn" type="button">🔐 Freischalten</button>
     </div>
@@ -675,8 +914,8 @@
       </form>
       <div class="admin-status" id="adminStatus">Noch gesperrt</div>
       <div class="button-row admin-actions">
-        <button class="upload-btn" id="deleteSelectedBtn" type="button" disabled>Ausgewählte Bilder löschen</button>
-        <button class="upload-btn" id="deleteAllBtn" type="button" disabled>Alle Bilder löschen</button>
+        <button class="upload-btn" id="deleteSelectedBtn" type="button" disabled>Ausgewählte Bilder archivieren</button>
+        <button class="upload-btn secondary-admin-btn" id="restoreSelectedBtn" type="button" disabled hidden>Aus Archiv zur Galerie</button>
       </div>
     </div>
   </div>
@@ -685,7 +924,11 @@
 <!-- ── Gallery ── -->
 <section class="gallery-section">
   <div class="gallery-header">
-    <h2>Galerie</h2>
+    <h2 id="galleryTitle">Galerie</h2>
+    <div class="gallery-tabs" id="galleryTabs" aria-label="Admin-Ansicht umschalten">
+      <button class="gallery-tab active" id="galleryTabActive" type="button">Galerie</button>
+      <button class="gallery-tab" id="galleryTabArchived" type="button">Archiv</button>
+    </div>
     <span class="photo-count" id="photoCount">…</span>
     <button class="refresh-btn" id="refreshBtn">↻ Aktualisieren</button>
   </div>
@@ -721,6 +964,10 @@
 <footer>
   <p>Alle Fotos werden sicher gespeichert. 💛<br>
   Mobile-optimierte Webapp im Browser – keine native App nötig. Nur du kannst deine eigenen Fotos löschen (über dieses Gerät).</p>
+  <div class="device-id-note">
+    <strong>Geräte-ID:</strong>
+    <span class="device-id-value" id="deviceIdValue">wird geladen…</span>
+  </div>
 </footer>
 
 <script>
@@ -731,8 +978,186 @@ const STORAGE_KEYS = {
   deviceId: 'hochzeit_galerie_device_id',
   legacyDeviceId: 'wedding_device_id',
   myPhotoIds: 'hochzeit_galerie_my_photo_ids',
-  legacyMyPhotoIds: 'my_photo_ids'
+  legacyMyPhotoIds: 'my_photo_ids',
+  themeName: 'hochzeit_galerie_theme_name'
 };
+
+const THEMES = [
+  {
+    name: 'Wildblumenbild',
+    description: 'Am Bild ausgerichtet: Papierweiss, Puderrosa, Kornblumenblau und Buttergelb.',
+    themeColor: '#fcf7f2',
+    swatches: ['#fcf7f2', '#f6e6e6', '#dbafb5', '#cdddc6', '#f2cb87'],
+    vars: {
+      '--cream': '#fcf7f2',
+      '--blush': '#f6e6e6',
+      '--rose': '#dbafb5',
+      '--gold': '#f2cb87',
+      '--dark': '#5d534d',
+      '--mid': '#8e7d74',
+      '--light': '#e9ddd3',
+      '--surface': 'rgba(255,255,255,.82)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(239,225,219,.72)',
+      '--border-soft': 'rgba(202,184,174,.30)',
+      '--header-start': '#f5dde5',
+      '--header-mid': '#fbf6ef',
+      '--header-end': '#dde9ef',
+      '--accent-soft': '#fbf2ec',
+      '--secondary': '#cdddc6',
+      '--secondary-strong': '#9ab08d',
+      '--pill-bg': '#f8ece8',
+      '--pill-text': '#ae7d85',
+      '--overlay-start': 'rgba(93,83,77,.52)',
+      '--overlay-soft': 'rgba(93,83,77,.42)'
+    }
+  },
+  {
+    name: 'Lavendelwiese',
+    description: 'Kühlere Pastelle mit Lavendel, Salbei und rosigem Licht.',
+    themeColor: '#fcf9ff',
+    swatches: ['#fcf9ff', '#ede3f6', '#c7b6e5', '#cfe3d3', '#f4d6c8'],
+    vars: {
+      '--cream': '#fcf9ff',
+      '--blush': '#ede3f6',
+      '--rose': '#c7b6e5',
+      '--gold': '#f4d6c8',
+      '--dark': '#54485f',
+      '--mid': '#7b6f88',
+      '--light': '#ddd1ea',
+      '--surface': 'rgba(255,255,255,.84)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(221,209,234,.72)',
+      '--border-soft': 'rgba(199,182,229,.22)',
+      '--header-start': '#9f8bc8',
+      '--header-mid': '#c7b6e5',
+      '--header-end': '#cfe3d3',
+      '--accent-soft': '#f7eefb',
+      '--secondary': '#cfe3d3',
+      '--secondary-strong': '#97b7a0',
+      '--pill-bg': '#f1eafb',
+      '--pill-text': '#7f69ab',
+      '--overlay-start': 'rgba(84,72,95,.58)',
+      '--overlay-soft': 'rgba(84,72,95,.46)'
+    }
+  },
+  {
+    name: 'Sommerstrauss',
+    description: 'Blumiger und lebendiger, aber immer noch weich und leicht.',
+    themeColor: '#fffdf8',
+    swatches: ['#fffdf8', '#fbe7e1', '#e7a7a0', '#f3d7a4', '#bfd9c4'],
+    vars: {
+      '--cream': '#fffdf8',
+      '--blush': '#fbe7e1',
+      '--rose': '#e7a7a0',
+      '--gold': '#f3d7a4',
+      '--dark': '#614c46',
+      '--mid': '#8a7067',
+      '--light': '#f1d2c7',
+      '--surface': 'rgba(255,252,248,.88)',
+      '--surface-strong': 'rgba(255,255,255,.94)',
+      '--surface-tint': 'rgba(243,215,164,.46)',
+      '--border-soft': 'rgba(231,167,160,.2)',
+      '--header-start': '#d98d87',
+      '--header-mid': '#efb7a7',
+      '--header-end': '#bfd9c4',
+      '--accent-soft': '#fff0ea',
+      '--secondary': '#bfd9c4',
+      '--secondary-strong': '#88b195',
+      '--pill-bg': '#fef0e8',
+      '--pill-text': '#c66f67',
+      '--overlay-start': 'rgba(97,76,70,.58)',
+      '--overlay-soft': 'rgba(97,76,70,.46)'
+    }
+  },
+  {
+    name: 'Salbei und Rose',
+    description: 'Moderner, natürlicher Look mit etwas mehr Ruhe und Eleganz.',
+    themeColor: '#faf7f1',
+    swatches: ['#faf7f1', '#e8e0d6', '#d9a7b0', '#afc8b5', '#efcfb4'],
+    vars: {
+      '--cream': '#faf7f1',
+      '--blush': '#e8e0d6',
+      '--rose': '#d9a7b0',
+      '--gold': '#efcfb4',
+      '--dark': '#4f4a45',
+      '--mid': '#766d68',
+      '--light': '#ddd3c7',
+      '--surface': 'rgba(255,255,252,.86)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(232,224,214,.8)',
+      '--border-soft': 'rgba(217,167,176,.18)',
+      '--header-start': '#b98792',
+      '--header-mid': '#d9a7b0',
+      '--header-end': '#afc8b5',
+      '--accent-soft': '#f7eeea',
+      '--secondary': '#afc8b5',
+      '--secondary-strong': '#7fa18b',
+      '--pill-bg': '#f4ebe6',
+      '--pill-text': '#a86f7b',
+      '--overlay-start': 'rgba(79,74,69,.58)',
+      '--overlay-soft': 'rgba(79,74,69,.46)'
+    }
+  },
+  {
+    name: 'Pfirsichgarten',
+    description: 'Warme Apricot-Noten mit hellem Grün und sonniger Stimmung.',
+    themeColor: '#fff7f0',
+    swatches: ['#fff7f0', '#f9e1d2', '#f0b8a8', '#d7e8c8', '#f6d98c'],
+    vars: {
+      '--cream': '#fff7f0',
+      '--blush': '#f9e1d2',
+      '--rose': '#f0b8a8',
+      '--gold': '#f6d98c',
+      '--dark': '#684d43',
+      '--mid': '#907065',
+      '--light': '#efcfbf',
+      '--surface': 'rgba(255,252,247,.86)',
+      '--surface-strong': 'rgba(255,255,255,.94)',
+      '--surface-tint': 'rgba(249,225,210,.76)',
+      '--border-soft': 'rgba(240,184,168,.2)',
+      '--header-start': '#de9a84',
+      '--header-mid': '#f0b8a8',
+      '--header-end': '#d7e8c8',
+      '--accent-soft': '#fff0e7',
+      '--secondary': '#d7e8c8',
+      '--secondary-strong': '#98b886',
+      '--pill-bg': '#fff0e2',
+      '--pill-text': '#cd7d69',
+      '--overlay-start': 'rgba(104,77,67,.58)',
+      '--overlay-soft': 'rgba(104,77,67,.46)'
+    }
+  },
+  {
+    name: 'Zarte Wildblume',
+    description: 'Die natürlichste Palette mit Papier, Trockenblumen und Fliederhauch.',
+    themeColor: '#f9f6f0',
+    swatches: ['#f9f6f0', '#efe6dd', '#cfa7a2', '#c6d8c0', '#dcc8e8'],
+    vars: {
+      '--cream': '#f9f6f0',
+      '--blush': '#efe6dd',
+      '--rose': '#cfa7a2',
+      '--gold': '#dcc8e8',
+      '--dark': '#5a514d',
+      '--mid': '#7f746f',
+      '--light': '#e3d8cf',
+      '--surface': 'rgba(255,255,251,.85)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(239,230,221,.8)',
+      '--border-soft': 'rgba(207,167,162,.18)',
+      '--header-start': '#b98e8a',
+      '--header-mid': '#cfa7a2',
+      '--header-end': '#c6d8c0',
+      '--accent-soft': '#f7efeb',
+      '--secondary': '#c6d8c0',
+      '--secondary-strong': '#8fa98a',
+      '--pill-bg': '#f3ebe7',
+      '--pill-text': '#9f6e69',
+      '--overlay-start': 'rgba(90,81,77,.58)',
+      '--overlay-soft': 'rgba(90,81,77,.46)'
+    }
+  }
+];
 
 function getDeviceId() {
   let id = localStorage.getItem(STORAGE_KEYS.deviceId) || localStorage.getItem(STORAGE_KEYS.legacyDeviceId);
@@ -753,6 +1178,56 @@ function getDeviceId() {
   return id;
 }
 const DEVICE_ID = getDeviceId();
+document.getElementById('deviceIdValue').textContent = DEVICE_ID;
+
+function getUploaderMetadata() {
+  const ua = navigator.userAgent || '';
+  const lowerUa = ua.toLowerCase();
+  let browser = 'Unbekannter Browser';
+  let os = 'Unbekanntes System';
+  let device = 'Unbekanntes Gerät';
+
+  if (/edg\//i.test(ua)) browser = 'Microsoft Edge';
+  else if (/opr\//i.test(ua) || /opera/i.test(ua)) browser = 'Opera';
+  else if (/chrome\//i.test(ua) && !/edg\//i.test(ua)) browser = 'Google Chrome';
+  else if (/firefox\//i.test(ua)) browser = 'Mozilla Firefox';
+  else if (/safari\//i.test(ua) && !/chrome\//i.test(ua)) browser = 'Safari';
+
+  if (/iphone/i.test(ua)) {
+    os = 'iOS';
+    device = 'iPhone';
+  } else if (/ipad/i.test(ua)) {
+    os = 'iPadOS';
+    device = 'iPad';
+  } else if (/android/i.test(ua)) {
+    os = 'Android';
+    device = /mobile/i.test(ua) ? 'Android Smartphone' : 'Android Tablet';
+  } else if (/mac os x/i.test(ua)) {
+    os = 'macOS';
+    device = 'Mac';
+  } else if (/windows/i.test(ua)) {
+    os = 'Windows';
+    device = 'Windows-PC';
+  } else if (/linux/i.test(ua)) {
+    os = 'Linux';
+    device = 'Linux-Gerät';
+  }
+
+  if (navigator.userAgentData?.mobile && !/iphone|android/i.test(lowerUa)) {
+    device = 'Mobiles Gerät';
+  }
+
+  return {
+    browser,
+    os,
+    device,
+    language: navigator.language || '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    platform: navigator.platform || '',
+    vendor: navigator.vendor || '',
+    screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`
+  };
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    State
@@ -761,10 +1236,68 @@ let photos     = [];   // [{id, filename, original_name, uploaded_at, size}]
 let lbIndex    = 0;
 let pendingFiles = [];
 let selectedAdminIds = new Set();
+let activeThemeIndex = 0;
+let galleryScope = 'active';
 let appConfig = {
   maxFileMb: 100,
   maxCommentLength: 500
 };
+
+function isArchiveView() {
+  return isAdminUnlocked() && galleryScope === 'archived';
+}
+
+function setGalleryScope(scope) {
+  if (!isAdminUnlocked()) {
+    galleryScope = 'active';
+    selectedAdminIds = new Set();
+    updateAdminUi();
+    loadGallery();
+    return;
+  }
+  galleryScope = scope === 'archived' ? 'archived' : 'active';
+  selectedAdminIds = new Set();
+  updateAdminUi();
+  loadGallery();
+}
+
+function getStoredThemeIndex() {
+  const storedName = localStorage.getItem(STORAGE_KEYS.themeName);
+  const index = THEMES.findIndex(theme => theme.name === storedName);
+  return index >= 0 ? index : 0;
+}
+
+function renderThemePalette(theme) {
+  const palette = document.getElementById('themePalette');
+  palette.innerHTML = '';
+  theme.swatches.forEach(color => {
+    const swatch = document.createElement('span');
+    swatch.className = 'theme-swatch';
+    swatch.style.background = color;
+    palette.appendChild(swatch);
+  });
+}
+
+function applyTheme(index) {
+  activeThemeIndex = (index + THEMES.length) % THEMES.length;
+  const theme = THEMES[activeThemeIndex];
+  const root = document.documentElement;
+
+  Object.entries(theme.vars).forEach(([key, value]) => {
+    root.style.setProperty(key, value);
+  });
+
+  localStorage.setItem(STORAGE_KEYS.themeName, theme.name);
+  document.getElementById('themeName').textContent = theme.name;
+  document.getElementById('themeDescription').textContent = theme.description;
+  document.getElementById('themeCounter').textContent = `${activeThemeIndex + 1} / ${THEMES.length}`;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.themeColor);
+  renderThemePalette(theme);
+}
+
+function cycleTheme(direction) {
+  applyTheme(activeThemeIndex + direction);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Toast helper
@@ -800,7 +1333,17 @@ function isAdminUnlocked() {
    ═══════════════════════════════════════════════════════════════════════════ */
 async function loadGallery() {
   try {
-    const res = await fetch('/api/photos');
+    const isAdminView = isAdminUnlocked();
+    if (!isAdminView && galleryScope !== 'active') {
+      galleryScope = 'active';
+    }
+    const url = isAdminView
+      ? `/api/admin/photos?scope=${encodeURIComponent(galleryScope)}`
+      : '/api/photos';
+    const headers = isAdminView
+      ? { 'X-Admin-Password': getAdminPassword() }
+      : undefined;
+    const res = await fetch(url, headers ? { headers } : undefined);
     if (!res.ok) throw new Error('Fehler beim Laden');
     photos = await res.json();
     renderGallery();
@@ -832,12 +1375,22 @@ async function loadConfig() {
 function renderGallery() {
   const grid = document.getElementById('photoGrid');
   const count = document.getElementById('photoCount');
+  const title = document.getElementById('galleryTitle');
+  const archiveView = isArchiveView();
   selectedAdminIds = new Set([...selectedAdminIds].filter(id => photos.some(photo => photo.id === id)));
 
-  count.textContent = photos.length === 1 ? '1 Foto' : `${photos.length} Fotos`;
+  if (archiveView) {
+    title.textContent = 'Archiv';
+    count.textContent = photos.length === 1 ? '1 Foto im Archiv' : `${photos.length} Fotos im Archiv`;
+  } else {
+    title.textContent = 'Galerie';
+    count.textContent = photos.length === 1 ? '1 Foto' : `${photos.length} Fotos`;
+  }
 
   if (photos.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><span class="empty-icon">📸</span><p>Noch keine Fotos. Sei der Erste!</p></div>';
+    grid.innerHTML = archiveView
+      ? '<div class="empty-state"><span class="empty-icon">🗂️</span><p>Im Archiv liegen aktuell keine Fotos.</p></div>'
+      : '<div class="empty-state"><span class="empty-icon">📸</span><p>Noch keine Fotos. Sei der Erste!</p></div>';
     updateAdminUi();
     return;
   }
@@ -864,6 +1417,14 @@ function renderGallery() {
         </div>
         <div class="card-title">${escHtml(p.original_name || 'Foto')}</div>
         ${p.comment ? `<div class="card-comment">${escHtml(p.comment)}</div>` : ''}
+        ${isAdminUnlocked() && p.device_id ? `
+          <div class="card-admin-meta">
+            <div><strong>Uploader-ID:</strong> <code>${escHtml(p.device_id)}</code></div>
+            ${p.uploader_summary ? `<div><strong>Gerät:</strong> ${escHtml(p.uploader_summary)}</div>` : ''}
+            ${renderUploaderDetails(p.uploader_info, p.uploader_ip)}
+            ${p.archived_at ? `<div><strong>Archiviert:</strong> ${escHtml(formatDate(p.archived_at))}</div>` : ''}
+          </div>
+        ` : ''}
       </div>`;
 
     // Click → lightbox (not on delete btn)
@@ -916,6 +1477,25 @@ function addMyPhotoId(id) {
 function removeMyPhotoId(id) {
   const ids = getMyPhotoIds().filter(x => x !== id);
   localStorage.setItem(STORAGE_KEYS.myPhotoIds, JSON.stringify(ids));
+}
+
+function renderUploaderDetails(rawInfo, rawIp) {
+  try {
+    const info = rawInfo ? JSON.parse(rawInfo) : {};
+    const lines = [];
+
+    if (info.language) lines.push(`<div><strong>Sprache:</strong> ${escHtml(info.language)}</div>`);
+    if (info.timezone) lines.push(`<div><strong>Zeitzone:</strong> ${escHtml(info.timezone)}</div>`);
+    if (info.platform) lines.push(`<div><strong>Plattform:</strong> ${escHtml(info.platform)}</div>`);
+    if (info.vendor) lines.push(`<div><strong>Hersteller:</strong> ${escHtml(info.vendor)}</div>`);
+    if (info.screen && info.screen !== '0x0') lines.push(`<div><strong>Display:</strong> ${escHtml(info.screen)}</div>`);
+    if (rawIp) lines.push(`<div><strong>IP:</strong> <code>${escHtml(rawIp)}</code></div>`);
+    lines.push('<div><strong>Konto:</strong> Apple-ID/Google-Konto ist ohne separaten Login im Browser nicht direkt auslesbar.</div>');
+
+    return lines.join('');
+  } catch {
+    return rawIp ? `<div><strong>IP:</strong> <code>${escHtml(rawIp)}</code></div>` : '';
+  }
 }
 
 function markOwnPhotos() {
@@ -1070,6 +1650,7 @@ uploadBtn.addEventListener('click', async () => {
       formData.append('photo',     file);
       formData.append('device_id', DEVICE_ID);
       formData.append('comment', messageInput.value.trim());
+      formData.append('uploader_info', JSON.stringify(getUploaderMetadata()));
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -1117,6 +1698,9 @@ document.getElementById('refreshBtn').addEventListener('click', () => {
   showToast('Galerie aktualisiert');
 });
 
+document.getElementById('themePrevBtn').addEventListener('click', () => cycleTheme(-1));
+document.getElementById('themeNextBtn').addEventListener('click', () => cycleTheme(1));
+
 document.getElementById('adminToggleBtn').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.toggle('hidden');
 });
@@ -1142,6 +1726,7 @@ document.getElementById('adminLoginForm').addEventListener('submit', async e => 
 
 document.getElementById('adminLogoutBtn').addEventListener('click', () => {
   selectedAdminIds = new Set();
+  galleryScope = 'active';
   setAdminPassword('');
   document.getElementById('adminPasswordInput').value = '';
   showToast('Admin-Bereich gesperrt');
@@ -1150,9 +1735,45 @@ document.getElementById('adminLogoutBtn').addEventListener('click', () => {
 
 document.getElementById('deleteSelectedBtn').addEventListener('click', async () => {
   if (!selectedAdminIds.size) return;
-  if (!confirm(`${selectedAdminIds.size} ausgewählte Bilder wirklich löschen?`)) return;
+  const isArchive = isArchiveView();
+  const confirmationText = isArchive
+    ? `${selectedAdminIds.size} archivierte Bilder endgültig löschen?`
+    : `${selectedAdminIds.size} ausgewählte Bilder ins Archiv verschieben?`;
+  if (!confirm(confirmationText)) return;
   try {
-    const res = await fetch('/api/admin/delete-selected', {
+    const res = await fetch(
+      isArchive ? '/api/admin/delete-archived-selected' : '/api/admin/delete-selected',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Password': getAdminPassword()
+        },
+        body: JSON.stringify({ ids: [...selectedAdminIds] })
+      }
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Löschen fehlgeschlagen');
+    if (isArchive) {
+      for (const id of selectedAdminIds) removeMyPhotoId(id);
+    }
+    selectedAdminIds = new Set();
+    if (isArchive) {
+      showToast(`${data.deleted || 0} Bilder gelöscht`, 'red');
+    } else {
+      showToast(`${data.archived || 0} Bilder archiviert`, 'green');
+    }
+    loadGallery();
+  } catch (e) {
+    showToast(e.message, 'red');
+  }
+});
+
+document.getElementById('restoreSelectedBtn').addEventListener('click', async () => {
+  if (!selectedAdminIds.size || !isArchiveView()) return;
+  if (!confirm(`${selectedAdminIds.size} archivierte Bilder zur Galerie zurück verschieben?`)) return;
+  try {
+    const res = await fetch('/api/admin/restore-selected', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1161,32 +1782,23 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', async () 
       body: JSON.stringify({ ids: [...selectedAdminIds] })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Löschen fehlgeschlagen');
-    for (const id of selectedAdminIds) removeMyPhotoId(id);
+    if (!res.ok) throw new Error(data.error || 'Wiederherstellen fehlgeschlagen');
     selectedAdminIds = new Set();
-    showToast(`${data.deleted || 0} Bilder gelöscht`, 'red');
+    showToast(`${data.restored || 0} Bilder wiederhergestellt`, 'green');
     loadGallery();
   } catch (e) {
     showToast(e.message, 'red');
   }
 });
 
-document.getElementById('deleteAllBtn').addEventListener('click', async () => {
-  if (!confirm('Wirklich ALLE Bilder löschen? Das kann nicht rückgängig gemacht werden.')) return;
-  try {
-    const res = await fetch('/api/admin/delete-all', {
-      method: 'DELETE',
-      headers: { 'X-Admin-Password': getAdminPassword() }
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Löschen fehlgeschlagen');
-    localStorage.removeItem(STORAGE_KEYS.myPhotoIds);
-    selectedAdminIds = new Set();
-    showToast(`${data.deleted || 0} Bilder gelöscht`, 'red');
-    loadGallery();
-  } catch (e) {
-    showToast(e.message, 'red');
-  }
+document.getElementById('galleryTabActive').addEventListener('click', () => {
+  if (!isAdminUnlocked() || !isArchiveView()) return;
+  setGalleryScope('active');
+});
+
+document.getElementById('galleryTabArchived').addEventListener('click', () => {
+  if (!isAdminUnlocked() || isArchiveView()) return;
+  setGalleryScope('archived');
 });
 
 // Auto-refresh every 30 s when tab is visible
@@ -1219,16 +1831,28 @@ function updateAdminUi() {
   const unlocked = isAdminUnlocked();
   const count = selectedAdminIds.size;
   const status = document.getElementById('adminStatus');
+  const actionButton = document.getElementById('deleteSelectedBtn');
+  const restoreButton = document.getElementById('restoreSelectedBtn');
+  const tabs = document.getElementById('galleryTabs');
+  const activeTab = document.getElementById('galleryTabActive');
+  const archivedTab = document.getElementById('galleryTabArchived');
+  const archiveMode = isArchiveView();
   status.textContent = unlocked
     ? `Entsperrt · ${count} Bild${count === 1 ? '' : 'er'} ausgewählt`
     : 'Noch gesperrt';
   status.className = 'admin-status' + (unlocked ? ' ok' : '');
   document.getElementById('adminToggleBtn').textContent = unlocked ? '🔓 Entsperrt' : '🔐 Freischalten';
-  document.getElementById('deleteSelectedBtn').disabled = !unlocked || count === 0;
-  document.getElementById('deleteAllBtn').disabled = !unlocked || photos.length === 0;
+  tabs.classList.toggle('show', unlocked);
+  activeTab.classList.toggle('active', !archiveMode);
+  archivedTab.classList.toggle('active', archiveMode);
+  actionButton.textContent = archiveMode ? 'Aus Archiv endgültig löschen' : 'Ausgewählte Bilder archivieren';
+  actionButton.disabled = !unlocked || count === 0;
+  restoreButton.hidden = !archiveMode;
+  restoreButton.disabled = !unlocked || !archiveMode || count === 0;
 }
 
 /* ── Init ── */
+applyTheme(0);
 updateAdminUi();
 loadConfig().then(loadGallery);
 </script>

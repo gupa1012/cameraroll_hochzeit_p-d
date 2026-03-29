@@ -11,6 +11,41 @@ Schritt-für-Schritt: Die Galerie live bringen – günstig, einfach, ohne Daten
 Hetzner ist ein deutsches Unternehmen (DSGVO-konform), super günstig und zuverlässig.
 Alle Bilder liegen auf deinem Server und gehen nie verloren.
 
+### Schnellster Weg: Einmal Skript ausführen
+
+Wenn du es maximal einfach willst, nutze direkt das Setup-Skript aus diesem Repo.
+
+Auf dem frischen Ubuntu-Server nur diese Befehle ausführen:
+
+```bash
+ssh root@<deine-ip>
+git clone https://github.com/gupa1012/cameraroll_hochzeit_p-d /root/hochzeit-setup
+cd /root/hochzeit-setup
+chmod +x setup-server.sh
+sudo ./setup-server.sh
+```
+
+Das Skript fragt dich Schritt fuer Schritt nach:
+
+- Zielverzeichnis der App
+- Port
+- Domain
+- optional `www`
+- E-Mail fuer Let's Encrypt
+
+Und erledigt dann automatisch:
+
+- Systempakete installieren
+- Node.js 22 installieren
+- PM2 installieren
+- Repo kopieren oder klonen
+- `npm install`
+- Nginx konfigurieren
+- PM2-Start einrichten
+- optional HTTPS per Certbot
+
+Wenn du diesen Weg nutzt, kannst du die meisten manuellen Schritte weiter unten ueberspringen.
+
 ---
 
 ### 1. Server bestellen
@@ -44,6 +79,16 @@ Per SSH verbinden:
 ```bash
 ssh root@<deine-ip>
 ```
+
+Einfachster Weg:
+```bash
+git clone https://github.com/gupa1012/cameraroll_hochzeit_p-d /root/hochzeit-setup
+cd /root/hochzeit-setup
+chmod +x setup-server.sh
+sudo ./setup-server.sh
+```
+
+Nur wenn du alles manuell machen willst, folgen die Einzelschritte darunter.
 
 Node.js installieren:
 ```bash
@@ -85,6 +130,8 @@ git clone https://github.com/gupa1012/cameraroll_hochzeit_p-d /var/www/hochzeit
 
 ### 5. Dependencies installieren & App starten
 
+Wenn du das Skript verwendet hast, ist dieser Schritt bereits erledigt.
+
 ```bash
 cd /var/www/hochzeit
 npm install
@@ -101,6 +148,9 @@ ADMIN_PASSWORD=mein-geheimes-passwort-hier
 EOF
 ```
 
+Hinweis:
+Aktuell ist in diesem Projekt das Admin-Passwort direkt in [server.js](server.js) fest hinterlegt. Wenn du fuer Hosting wieder auf `.env` umstellen willst, sollte das vor Livegang noch zurueckgebaut werden.
+
 Dann `server.js` so starten:
 ```bash
 pm2 start server.js --name "hochzeit"
@@ -109,6 +159,8 @@ pm2 start server.js --name "hochzeit"
 ---
 
 ### 6. Nginx konfigurieren
+
+Wenn du das Skript verwendet hast, ist auch dieser Schritt bereits erledigt.
 
 ```bash
 nano /etc/nginx/sites-available/hochzeit
@@ -144,6 +196,8 @@ nginx -t && systemctl reload nginx
 ---
 
 ### 7. HTTPS (SSL) einrichten
+
+Wenn du im Skript Domain und E-Mail eingibst, versucht das Skript HTTPS direkt mit einzurichten.
 
 ```bash
 certbot --nginx -d eure-hochzeit.de -d www.eure-hochzeit.de

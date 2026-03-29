@@ -4,6 +4,7 @@ const express = require('express');
 const multer  = require('multer');
 const { DatabaseSync } = require('node:sqlite');
 const { createHash, timingSafeEqual } = require('node:crypto');
+const os      = require('node:os');
 const path    = require('path');
 const fs      = require('fs');
 const { v4: uuidv4 } = require('uuid');
@@ -12,18 +13,34 @@ const rateLimit = require('express-rate-limit');
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 const PORT        = process.env.PORT || 3000;
+const HOST        = process.env.HOST || '0.0.0.0';
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const THUMBS_DIR  = path.join(__dirname, 'uploads', '_thumbs');
 const DB_PATH     = process.env.DB_PATH || path.join(__dirname, 'database.sqlite');
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_PASSWORD = '090392';
 const parsedMaxFileMb = parseInt(process.env.MAX_FILE_MB || '100', 10);
 const MAX_COMMENT_LENGTH = 500;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const INDEX_PATH   = path.join(__dirname, 'public', 'index.html');
+const THEME_BACKGROUND_PATH = path.join(__dirname, 'Generated Image March 29, 2026 - 9_05PM.png');
 
 function getMaxFileMb(value) {
   if (!Number.isFinite(value) || value <= 0 || value > 500) return 100;
   return value;
+}
+
+function getNetworkUrls(port) {
+  const interfaces = os.networkInterfaces();
+  const urls = [];
+
+  for (const addresses of Object.values(interfaces)) {
+    for (const address of addresses || []) {
+      if (address.family !== 'IPv4' || address.internal) continue;
+      urls.push(`http://${address.address}:${port}`);
+    }
+  }
+
+  return [...new Set(urls)];
 }
 
 const MAX_FILE_MB = getMaxFileMb(parsedMaxFileMb);
@@ -42,6 +59,10 @@ db.exec(`
     original_name TEXT,
     device_id    TEXT NOT NULL,
     comment      TEXT DEFAULT '',
+    uploader_summary TEXT DEFAULT '',
+    uploader_info TEXT DEFAULT '',
+    uploader_ip TEXT DEFAULT '',
+    archived_at  DATETIME,
     uploaded_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
     size         INTEGER
   );
@@ -51,18 +72,45 @@ const tableColumns = db.prepare(`PRAGMA table_info(photos)`).all();
 if (!tableColumns.some(column => column.name === 'comment')) {
   db.exec(`ALTER TABLE photos ADD COLUMN comment TEXT DEFAULT ''`);
 }
+if (!tableColumns.some(column => column.name === 'archived_at')) {
+  db.exec(`ALTER TABLE photos ADD COLUMN archived_at DATETIME`);
+}
+if (!tableColumns.some(column => column.name === 'uploader_summary')) {
+  db.exec(`ALTER TABLE photos ADD COLUMN uploader_summary TEXT DEFAULT ''`);
+}
+if (!tableColumns.some(column => column.name === 'uploader_info')) {
+  db.exec(`ALTER TABLE photos ADD COLUMN uploader_info TEXT DEFAULT ''`);
+}
+if (!tableColumns.some(column => column.name === 'uploader_ip')) {
+  db.exec(`ALTER TABLE photos ADD COLUMN uploader_ip TEXT DEFAULT ''`);
+}
 
-const stmtInsert  = db.prepare(`INSERT INTO photos (id, filename, original_name, device_id, comment, size)
-                                VALUES (:id, :filename, :original_name, :device_id, :comment, :size)`);
-const stmtAll     = db.prepare(`SELECT id, filename, original_name, comment, uploaded_at, size FROM photos ORDER BY uploaded_at DESC`);
-const stmtAllFull = db.prepare(`SELECT * FROM photos ORDER BY uploaded_at DESC`);
+const stmtInsert  = db.prepare(`INSERT INTO photos (id, filename, original_name, device_id, comment, uploader_summary, uploader_info, uploader_ip, size)
+                                VALUES (:id, :filename, :original_name, :device_id, :comment, :uploader_summary, :uploader_info, :uploader_ip, :size)`);
+const stmtAllActive = db.prepare(`SELECT id, filename, original_name, comment, uploaded_at, size
+                                  FROM photos
+                                  WHERE archived_at IS NULL
+                                  ORDER BY uploaded_at DESC`);
+const stmtAdminAllActive = db.prepare(`SELECT id, filename, original_name, comment, uploaded_at, size, device_id, uploader_summary, uploader_info, uploader_ip, archived_at
+                                       FROM photos
+                                       WHERE archived_at IS NULL
+                                       ORDER BY uploaded_at DESC`);
+const stmtAdminAllArchived = db.prepare(`SELECT id, filename, original_name, comment, uploaded_at, size, device_id, uploader_summary, uploader_info, uploader_ip, archived_at
+                                         FROM photos
+                                         WHERE archived_at IS NOT NULL
+                                         ORDER BY archived_at DESC, uploaded_at DESC`);
 const stmtGetById = db.prepare(`SELECT * FROM photos WHERE id = ?`);
 const stmtDelete  = db.prepare(`DELETE FROM photos WHERE id = ?`);
+const stmtArchive = db.prepare(`UPDATE photos SET archived_at = CURRENT_TIMESTAMP WHERE id = ? AND archived_at IS NULL`);
+const stmtRestore = db.prepare(`UPDATE photos SET archived_at = NULL WHERE id = ? AND archived_at IS NOT NULL`);
 
 // ─── Express ──────────────────────────────────────────────────────────────────
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+app.get('/theme-background.png', (_req, res) => {
+  res.sendFile(THEME_BACKGROUND_PATH);
+});
 
 function renderIndexHtml() {
   return fs.readFileSync(INDEX_PATH, 'utf8')
@@ -119,6 +167,48 @@ async function ensureThumb(filename) {
 function getCommentValue(value) {
   if (value === null || value === undefined) return '';
   return String(value).trim().slice(0, MAX_COMMENT_LENGTH);
+}
+
+function getUploaderMetadata(value, req) {
+  let parsed = {};
+
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      parsed = {};
+    }
+  }
+
+  const browser = typeof parsed.browser === 'string' ? parsed.browser.trim().slice(0, 80) : '';
+  const osName = typeof parsed.os === 'string' ? parsed.os.trim().slice(0, 80) : '';
+  const device = typeof parsed.device === 'string' ? parsed.device.trim().slice(0, 80) : '';
+  const language = typeof parsed.language === 'string' ? parsed.language.trim().slice(0, 32) : '';
+  const timezone = typeof parsed.timezone === 'string' ? parsed.timezone.trim().slice(0, 64) : '';
+  const platform = typeof parsed.platform === 'string' ? parsed.platform.trim().slice(0, 64) : '';
+  const vendor = typeof parsed.vendor === 'string' ? parsed.vendor.trim().slice(0, 64) : '';
+  const screen = typeof parsed.screen === 'string' ? parsed.screen.trim().slice(0, 32) : '';
+  const userAgent = (req.get('User-Agent') || '').slice(0, 400);
+  const ip = String(req.ip || req.socket?.remoteAddress || '').slice(0, 80);
+
+  const summaryParts = [device, browser, osName].filter(Boolean);
+  const summary = summaryParts.join(' · ').slice(0, 160);
+
+  return {
+    summary,
+    info: JSON.stringify({
+      browser,
+      os: osName,
+      device,
+      language,
+      timezone,
+      platform,
+      vendor,
+      screen,
+      userAgent
+    }),
+    ip
+  };
 }
 
 function isValidDeviceId(value) {
@@ -203,7 +293,15 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/api/photos', (_req, res) => {
-  const photos = stmtAll.all();
+  const photos = stmtAllActive.all();
+  res.json(photos);
+});
+
+app.get('/api/admin/photos', adminLimiter, requireAdmin, (req, res) => {
+  const scope = req.query.scope === 'archived' ? 'archived' : 'active';
+  const photos = scope === 'archived'
+    ? stmtAdminAllArchived.all()
+    : stmtAdminAllActive.all();
   res.json(photos);
 });
 
@@ -230,6 +328,7 @@ app.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) 
 
   const deviceId = (req.body.device_id || '').trim();
   const comment = getCommentValue(req.body.comment);
+  const uploaderMetadata = getUploaderMetadata(req.body.uploader_info, req);
   if (!isValidDeviceId(deviceId)) {
     // clean up
     fs.unlink(req.file.path, err => {
@@ -244,6 +343,9 @@ app.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) 
     original_name: req.file.originalname,
     device_id:     deviceId,
     comment,
+    uploader_summary: uploaderMetadata.summary,
+    uploader_info: uploaderMetadata.info,
+    uploader_ip: uploaderMetadata.ip,
     size:          req.file.size
   };
 
@@ -289,25 +391,56 @@ app.post('/api/admin/delete-selected', adminLimiter, requireAdmin, (req, res) =>
     return res.status(400).json({ error: 'Keine Fotos ausgewählt.' });
   }
 
+  let archived = 0;
+  for (const id of ids) {
+    const photo = stmtGetById.get(id);
+    if (!photo || photo.archived_at) continue;
+    stmtArchive.run(id);
+    archived++;
+  }
+
+  res.json({ success: true, archived });
+});
+
+app.post('/api/admin/restore-selected', adminLimiter, requireAdmin, (req, res) => {
+  const ids = Array.isArray(req.body?.ids)
+    ? req.body.ids.filter(id => typeof id === 'string' && id.trim())
+    : [];
+
+  if (!ids.length) {
+    return res.status(400).json({ error: 'Keine Fotos ausgewählt.' });
+  }
+
+  let restored = 0;
+  for (const id of ids) {
+    const photo = stmtGetById.get(id);
+    if (!photo || !photo.archived_at) continue;
+    stmtRestore.run(id);
+    restored++;
+  }
+
+  res.json({ success: true, restored });
+});
+
+app.post('/api/admin/delete-archived-selected', adminLimiter, requireAdmin, (req, res) => {
+  const ids = Array.isArray(req.body?.ids)
+    ? req.body.ids.filter(id => typeof id === 'string' && id.trim())
+    : [];
+
+  if (!ids.length) {
+    return res.status(400).json({ error: 'Keine Fotos ausgewählt.' });
+  }
+
   let deleted = 0;
   for (const id of ids) {
     const photo = stmtGetById.get(id);
-    if (!photo) continue;
+    if (!photo || !photo.archived_at) continue;
     deletePhotoFiles(photo);
     stmtDelete.run(id);
     deleted++;
   }
 
   res.json({ success: true, deleted });
-});
-
-app.delete('/api/admin/delete-all', adminLimiter, requireAdmin, (_req, res) => {
-  const photos = stmtAllFull.all();
-  for (const photo of photos) {
-    deletePhotoFiles(photo);
-    stmtDelete.run(photo.id);
-  }
-  res.json({ success: true, deleted: photos.length });
 });
 
 // GET /uploads/:filename?thumb=1 – serve original or thumbnail
@@ -340,8 +473,19 @@ app.use((err, _req, res, _next) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`✨ Hochzeits-Galerie läuft auf http://localhost:${PORT}`);
+  if (HOST === '0.0.0.0') {
+    const networkUrls = getNetworkUrls(PORT);
+    if (networkUrls.length) {
+      console.log('📱 Im lokalen WLAN erreichbar unter:');
+      for (const url of networkUrls) {
+        console.log(`   ${url}`);
+      }
+    }
+  } else {
+    console.log(`🌐 Netzwerk-Bindung: http://${HOST}:${PORT}`);
+  }
   if (ADMIN_PASSWORD) console.log('🔐 Admin-Passwort ist gesetzt.');
   if (!ADMIN_PASSWORD) console.log('ℹ️ Admin-Bereich bleibt deaktiviert, bis ADMIN_PASSWORD gesetzt ist.');
 });
