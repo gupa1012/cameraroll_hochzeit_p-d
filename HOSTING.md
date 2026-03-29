@@ -27,7 +27,7 @@ Alle Bilder liegen auf deinem Server und gehen nie verloren.
 
 ### 2. Domain (optional, aber schön)
 
-Auf [namecheap.com](https://www.namecheap.com) oder direkt bei [Hetzner](https://www.hetzner.com/domainregistration) eine Domain kaufen (z. B. `patricia-david-hochzeit.de`, ~€10/Jahr).
+Auf [namecheap.com](https://www.namecheap.com) oder direkt bei [Hetzner](https://www.hetzner.com/domainregistration) eine Domain kaufen (z. B. `desiree-patrick-hochzeit.de`, ~€10/Jahr).
 
 DNS-Eintrag setzen:
 ```
@@ -45,7 +45,7 @@ ssh root@<deine-ip>
 
 Node.js installieren:
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 ```
 
@@ -87,17 +87,17 @@ pm2 save
 pm2 startup   # zeigt einen Befehl an, den du ausführen musst
 ```
 
-Optional: Admin-Key setzen (damit du als Admin alle Fotos löschen kannst):
+Optional: Admin-Passwort setzen (damit du den Admin-Bereich entsperren und alle oder ausgewählte Fotos löschen kannst):
 ```bash
 pm2 start server.js --name "hochzeit" --env production -- \
-  -e "ADMIN_KEY=mein-geheimer-schlüssel-hier"
+  -e "ADMIN_PASSWORD=mein-geheimes-passwort-hier"
 ```
 
 Oder mit `.env`-Datei:
 ```bash
 cat > /var/www/hochzeit/.env << 'EOF'
 PORT=3000
-ADMIN_KEY=mein-geheimer-schlüssel-hier
+ADMIN_PASSWORD=mein-geheimes-passwort-hier
 EOF
 ```
 
@@ -118,7 +118,7 @@ Inhalt:
 ```nginx
 server {
     listen 80;
-    server_name patricia-david-hochzeit.de www.patricia-david-hochzeit.de;
+    server_name desiree-patrick-hochzeit.de www.desiree-patrick-hochzeit.de;
     # Oder: server_name <deine-ip>;
 
     client_max_body_size 200M;   # max. Upload-Größe
@@ -146,10 +146,10 @@ nginx -t && systemctl reload nginx
 ### 7. HTTPS (SSL) einrichten
 
 ```bash
-certbot --nginx -d patricia-david-hochzeit.de -d www.patricia-david-hochzeit.de
+certbot --nginx -d desiree-patrick-hochzeit.de -d www.desiree-patrick-hochzeit.de
 ```
 
-Fertig! Die App ist jetzt unter `https://patricia-david-hochzeit.de` erreichbar. 🎉
+Fertig! Die App ist jetzt unter `https://desiree-patrick-hochzeit.de` erreichbar. 🎉
 
 ---
 
@@ -181,7 +181,7 @@ Einfacherer Weg: Automatisches Hetzner-Server-Backup aktivieren (€0,80/Monat e
 4. Environment Variables setzen:
    ```
    PORT=3000
-   ADMIN_KEY=dein-geheimer-schlüssel
+   ADMIN_PASSWORD=dein-geheimes-passwort
    DB_PATH=/app/uploads/database.sqlite
    ```
 5. Deploy klicken – fertig!
@@ -220,11 +220,14 @@ Einfacherer Weg: Automatisches Hetzner-Server-Backup aktivieren (€0,80/Monat e
 
 ## Häufige Fragen
 
+**Ist das eine native Handy-App?**
+Nein – bewusst nicht. Es ist eine mobile-optimierte Webapp, die direkt im Smartphone-Browser läuft und sich dadurch viel entspannter für alle Gäste öffnen lässt.
+
 **Können Gäste ohne Login hochladen?**
 Ja! Die App identifiziert Geräte über eine eindeutige ID im Browser. Kein Konto nötig.
 
 **Was passiert, wenn ein Gast den Browser-Cache löscht?**
-Die Geräte-ID geht verloren. Der Gast kann seine alten Fotos nicht mehr löschen, aber neue hochladen. Du als Admin (mit `ADMIN_KEY`) kannst alle Fotos löschen.
+Die Geräte-ID geht verloren. Der Gast kann seine alten Fotos nicht mehr löschen, aber neue hochladen. Du als Admin (mit `ADMIN_PASSWORD`) kannst alle oder ausgewählte Fotos löschen.
 
 **Wie groß darf das Upload-Limit sein?**
 Standardmäßig 100 MB pro Bild. Kann mit `MAX_FILE_MB=200` angepasst werden.

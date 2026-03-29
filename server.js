@@ -3,6 +3,7 @@
 const express = require('express');
 const multer  = require('multer');
 const { DatabaseSync } = require('node:sqlite');
+const { timingSafeEqual } = require('node:crypto');
 const path    = require('path');
 const fs      = require('fs');
 const { v4: uuidv4 } = require('uuid');
@@ -14,8 +15,9 @@ const PORT        = process.env.PORT || 3000;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const THUMBS_DIR  = path.join(__dirname, 'uploads', '_thumbs');
 const DB_PATH     = process.env.DB_PATH || path.join(__dirname, 'database.sqlite');
-const ADMIN_KEY   = process.env.ADMIN_KEY || '';        // optional admin delete key
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.ADMIN_KEY || '';
 const MAX_FILE_MB = parseInt(process.env.MAX_FILE_MB || '100', 10);
+const MAX_COMMENT_LENGTH = 500;
 
 // ─── Setup directories ────────────────────────────────────────────────────────
 [UPLOADS_DIR, THUMBS_DIR].forEach(dir => {
@@ -30,14 +32,21 @@ db.exec(`
     filename     TEXT NOT NULL,
     original_name TEXT,
     device_id    TEXT NOT NULL,
+    comment      TEXT DEFAULT '',
     uploaded_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
     size         INTEGER
   );
 `);
 
-const stmtInsert  = db.prepare(`INSERT INTO photos (id, filename, original_name, device_id, size)
-                                VALUES (:id, :filename, :original_name, :device_id, :size)`);
-const stmtAll     = db.prepare(`SELECT id, filename, original_name, uploaded_at, size FROM photos ORDER BY uploaded_at DESC`);
+const photoColumns = db.prepare(`PRAGMA table_info(photos)`).all();
+if (!photoColumns.some(column => column.name === 'comment')) {
+  db.exec(`ALTER TABLE photos ADD COLUMN comment TEXT DEFAULT ''`);
+}
+
+const stmtInsert  = db.prepare(`INSERT INTO photos (id, filename, original_name, device_id, comment, size)
+                                VALUES (:id, :filename, :original_name, :device_id, :comment, :size)`);
+const stmtAll     = db.prepare(`SELECT id, filename, original_name, comment, uploaded_at, size FROM photos ORDER BY uploaded_at DESC`);
+const stmtAllFull = db.prepare(`SELECT * FROM photos ORDER BY uploaded_at DESC`);
 const stmtGetById = db.prepare(`SELECT * FROM photos WHERE id = ?`);
 const stmtDelete  = db.prepare(`DELETE FROM photos WHERE id = ?`);
 
@@ -92,6 +101,36 @@ async function ensureThumb(filename) {
   }
 }
 
+function getCommentValue(value) {
+  return String(value || '').trim().slice(0, MAX_COMMENT_LENGTH);
+}
+
+function isAdminPasswordValid(password) {
+  if (!ADMIN_PASSWORD || typeof password !== 'string') return false;
+  const expected = Buffer.from(ADMIN_PASSWORD);
+  const received = Buffer.from(password);
+  if (expected.length !== received.length) return false;
+  return timingSafeEqual(expected, received);
+}
+
+function requireAdmin(req, res, next) {
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).json({ error: 'Admin-Passwort ist noch nicht gesetzt.' });
+  }
+  const password = req.get('X-Admin-Password') || req.body?.password || '';
+  if (!isAdminPasswordValid(password)) {
+    return res.status(401).json({ error: 'Falsches Admin-Passwort.' });
+  }
+  next();
+}
+
+function deletePhotoFiles(photo) {
+  const filePath  = path.join(UPLOADS_DIR, photo.filename);
+  const thumbPath = path.join(THUMBS_DIR, photo.filename + '.webp');
+  fs.unlink(filePath,  () => {});
+  fs.unlink(thumbPath, () => {});
+}
+
 // ─── Rate limiters ────────────────────────────────────────────────────────────
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // 15 minutes
@@ -105,6 +144,22 @@ const deleteLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 60,
   message: { error: 'Zu viele Anfragen. Bitte warte einen Moment.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 80,
+  message: { error: 'Zu viele Admin-Anfragen. Bitte kurz warten.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Zu viele Login-Versuche. Bitte kurz warten.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -125,11 +180,22 @@ app.get('/api/photos', (_req, res) => {
   res.json(photos);
 });
 
+app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).json({ error: 'Admin-Passwort ist noch nicht gesetzt.' });
+  }
+  if (!isAdminPasswordValid(req.body?.password || '')) {
+    return res.status(401).json({ error: 'Falsches Admin-Passwort.' });
+  }
+  res.json({ success: true });
+});
+
 // POST /api/upload – upload a photo
 app.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen.' });
 
   const deviceId = (req.body.device_id || '').trim();
+  const comment = getCommentValue(req.body.comment);
   if (!deviceId || deviceId.length < 8) {
     // clean up
     fs.unlink(req.file.path, () => {});
@@ -141,6 +207,7 @@ app.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) 
     filename:      req.file.filename,
     original_name: req.file.originalname,
     device_id:     deviceId,
+    comment,
     size:          req.file.size
   };
 
@@ -153,6 +220,7 @@ app.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) 
     id:            photo.id,
     filename:      photo.filename,
     original_name: photo.original_name,
+    comment:       photo.comment,
     size:          photo.size
   });
 });
@@ -165,20 +233,45 @@ app.delete('/api/photos/:id', deleteLimiter, (req, res) => {
   if (!photo) return res.status(404).json({ error: 'Foto nicht gefunden.' });
 
   const isOwner = photo.device_id === deviceId;
-  const isAdmin = ADMIN_KEY && deviceId === ADMIN_KEY;
+  const isAdmin = isAdminPasswordValid(req.get('X-Admin-Password') || '');
 
   if (!isOwner && !isAdmin) {
     return res.status(403).json({ error: 'Nicht berechtigt.' });
   }
 
-  // Delete files
-  const filePath  = path.join(UPLOADS_DIR, photo.filename);
-  const thumbPath = path.join(THUMBS_DIR, photo.filename + '.webp');
-  fs.unlink(filePath,  () => {});
-  fs.unlink(thumbPath, () => {});
-
+  deletePhotoFiles(photo);
   stmtDelete.run(photo.id);
   res.json({ success: true });
+});
+
+app.post('/api/admin/delete-selected', adminLimiter, requireAdmin, (req, res) => {
+  const ids = Array.isArray(req.body?.ids)
+    ? req.body.ids.filter(id => typeof id === 'string' && id.trim())
+    : [];
+
+  if (!ids.length) {
+    return res.status(400).json({ error: 'Keine Fotos ausgewählt.' });
+  }
+
+  let deleted = 0;
+  for (const id of ids) {
+    const photo = stmtGetById.get(id);
+    if (!photo) continue;
+    deletePhotoFiles(photo);
+    stmtDelete.run(id);
+    deleted++;
+  }
+
+  res.json({ success: true, deleted });
+});
+
+app.delete('/api/admin/delete-all', adminLimiter, requireAdmin, (_req, res) => {
+  const photos = stmtAllFull.all();
+  for (const photo of photos) {
+    deletePhotoFiles(photo);
+    stmtDelete.run(photo.id);
+  }
+  res.json({ success: true, deleted: photos.length });
 });
 
 // GET /uploads/:filename?thumb=1 – serve original or thumbnail
@@ -213,5 +306,5 @@ app.use((err, _req, res, _next) => {
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`✨ Hochzeits-Galerie läuft auf http://localhost:${PORT}`);
-  if (ADMIN_KEY) console.log('🔑 Admin-Key ist gesetzt.');
+  if (ADMIN_PASSWORD) console.log('🔐 Admin-Passwort ist gesetzt.');
 });
