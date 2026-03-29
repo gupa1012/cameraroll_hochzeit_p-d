@@ -1,0 +1,236 @@
+# 🎊 Hochzeits-Galerie – Hosting-Anleitung
+
+Schritt-für-Schritt: Die Galerie live bringen – günstig, einfach, ohne Datenverlust.
+
+---
+
+## Option A: Hetzner VPS (empfohlen) 🏆
+
+**Kosten:** ab €3,29/Monat | **Daten:** immer sicher | **Aufwand:** ~20 Min.
+
+Hetzner ist ein deutsches Unternehmen (DSGVO-konform), super günstig und zuverlässig.
+Alle Bilder liegen auf deinem Server und gehen nie verloren.
+
+---
+
+### 1. Server bestellen
+
+1. Account anlegen auf [hetzner.com](https://www.hetzner.com/cloud)
+2. **New Server** klicken
+   - Location: **Nuremberg** oder **Falkenstein**
+   - Image: **Ubuntu 24.04**
+   - Type: **CX22** (2 vCPU, 4 GB RAM) – reicht locker aus
+   - SSH-Key: einen neuen hinzufügen (oder Passwort aktivieren)
+3. Server erstellen → IP-Adresse notieren
+
+---
+
+### 2. Domain (optional, aber schön)
+
+Auf [namecheap.com](https://www.namecheap.com) oder direkt bei [Hetzner](https://www.hetzner.com/domainregistration) eine Domain kaufen (z. B. `patricia-david-hochzeit.de`, ~€10/Jahr).
+
+DNS-Eintrag setzen:
+```
+A  @  →  <deine-hetzner-ip>
+```
+
+---
+
+### 3. Server einrichten
+
+Per SSH verbinden:
+```bash
+ssh root@<deine-ip>
+```
+
+Node.js installieren:
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+```
+
+PM2 (Prozess-Manager – App startet automatisch nach Reboot):
+```bash
+npm install -g pm2
+```
+
+Nginx (als Reverse-Proxy für HTTPS):
+```bash
+apt install -y nginx certbot python3-certbot-nginx
+```
+
+---
+
+### 4. App hochladen
+
+Auf deinem lokalen Computer (im Projekt-Ordner):
+```bash
+# Alle Dateien auf den Server kopieren (ohne node_modules)
+scp -r . root@<deine-ip>:/var/www/hochzeit
+```
+
+Oder via Git (empfohlen):
+```bash
+# Auf dem Server:
+git clone https://github.com/gupa1012/cameraroll_hochzeit_p-d /var/www/hochzeit
+```
+
+---
+
+### 5. Dependencies installieren & App starten
+
+```bash
+cd /var/www/hochzeit
+npm install
+pm2 start server.js --name "hochzeit" -- 
+pm2 save
+pm2 startup   # zeigt einen Befehl an, den du ausführen musst
+```
+
+Optional: Admin-Key setzen (damit du als Admin alle Fotos löschen kannst):
+```bash
+pm2 start server.js --name "hochzeit" --env production -- \
+  -e "ADMIN_KEY=mein-geheimer-schlüssel-hier"
+```
+
+Oder mit `.env`-Datei:
+```bash
+cat > /var/www/hochzeit/.env << 'EOF'
+PORT=3000
+ADMIN_KEY=mein-geheimer-schlüssel-hier
+EOF
+```
+
+Dann `server.js` so starten:
+```bash
+pm2 start server.js --name "hochzeit"
+```
+
+---
+
+### 6. Nginx konfigurieren
+
+```bash
+nano /etc/nginx/sites-available/hochzeit
+```
+
+Inhalt:
+```nginx
+server {
+    listen 80;
+    server_name patricia-david-hochzeit.de www.patricia-david-hochzeit.de;
+    # Oder: server_name <deine-ip>;
+
+    client_max_body_size 200M;   # max. Upload-Größe
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 300s;
+    }
+}
+```
+
+Aktivieren:
+```bash
+ln -s /etc/nginx/sites-available/hochzeit /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+```
+
+---
+
+### 7. HTTPS (SSL) einrichten
+
+```bash
+certbot --nginx -d patricia-david-hochzeit.de -d www.patricia-david-hochzeit.de
+```
+
+Fertig! Die App ist jetzt unter `https://patricia-david-hochzeit.de` erreichbar. 🎉
+
+---
+
+### 8. Backup einrichten (sehr wichtig!)
+
+Automatisches tägliches Backup auf Hetzner Object Storage (€0,023/GB):
+
+```bash
+# Hetzner Object Storage Bucket anlegen (im Hetzner Cloud-Panel)
+# dann rclone installieren:
+apt install -y rclone
+rclone config  # Schritt für Schritt folgen (S3-kompatibel, Hetzner Storage Box)
+```
+
+Einfacherer Weg: Automatisches Hetzner-Server-Backup aktivieren (€0,80/Monat extra):
+→ Hetzner Cloud Panel → Server → Backups → aktivieren ✓
+
+---
+
+## Option B: Railway.app (noch einfacher, aber teurer) 🚂
+
+**Kosten:** ab $5/Monat (mit Volume) | **Aufwand:** ~10 Min.
+
+> ⚠️ **Wichtig:** Railway hat ephemeren Storage – **Volume** ist Pflicht, sonst gehen Bilder verloren!
+
+1. [railway.app](https://railway.app) – Account mit GitHub verbinden
+2. **New Project** → **Deploy from GitHub Repo** → Repo auswählen
+3. Im Railway-Dashboard: **Add Volume** → Mountpoint: `/app/uploads`
+4. Environment Variables setzen:
+   ```
+   PORT=3000
+   ADMIN_KEY=dein-geheimer-schlüssel
+   DB_PATH=/app/uploads/database.sqlite
+   ```
+5. Deploy klicken – fertig!
+
+---
+
+## Option C: Render.com (kostenlose Alternative) 🎨
+
+**Kosten:** kostenlos (mit Einschränkungen) | **Aufwand:** ~10 Min.
+
+> ⚠️ Kostenloser Plan: Server schläft nach 15 Min. Inaktivität. Mit **Disk** (kostenpflichtig) für persistente Daten.
+
+---
+
+## Checkliste vor der Hochzeit ✅
+
+- [ ] Server läuft: `pm2 status` zeigt `online`
+- [ ] Website aufgerufen und ein Testfoto hochgeladen
+- [ ] Testfoto wieder gelöscht
+- [ ] HTTPS funktioniert (🔒 im Browser)
+- [ ] Backup aktiviert
+- [ ] URL an Gäste kommuniziert (z. B. QR-Code auf Tisch)
+- [ ] `MAX_FILE_MB=100` gesetzt (oder nach Bedarf anpassen)
+
+---
+
+## QR-Code erstellen
+
+```bash
+# QR-Code als PNG generieren (online):
+# https://qr.io oder https://www.qrcode-monkey.com
+# URL eingeben → herunterladen → ausdrucken
+```
+
+---
+
+## Häufige Fragen
+
+**Können Gäste ohne Login hochladen?**
+Ja! Die App identifiziert Geräte über eine eindeutige ID im Browser. Kein Konto nötig.
+
+**Was passiert, wenn ein Gast den Browser-Cache löscht?**
+Die Geräte-ID geht verloren. Der Gast kann seine alten Fotos nicht mehr löschen, aber neue hochladen. Du als Admin (mit `ADMIN_KEY`) kannst alle Fotos löschen.
+
+**Wie groß darf das Upload-Limit sein?**
+Standardmäßig 100 MB pro Bild. Kann mit `MAX_FILE_MB=200` angepasst werden.
+
+**Kann ich alle Fotos als ZIP herunterladen?**
+Ja, direkt vom Server: `zip -r fotos.zip /var/www/hochzeit/uploads/`
+
+**Wie viel Speicher brauche ich?**
+Für 100 Gäste à 5 Fotos à 10 MB = ~5 GB. Der CX22-Server hat 40 GB Disk – mehr als genug.
