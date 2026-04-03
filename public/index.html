@@ -18,12 +18,13 @@
             <p>Wedding Camera Roll sammelt Handyfotos direkt von euren Gästen, ohne App-Download und ohne öffentliche Galerie. Heute wird euer Space direkt freigeschaltet, später kommt an genau dieser Stelle Stripe dazwischen.</p>
             <div class="hero-actions">
               <a class="button primary" href="#space-anlegen">Hochzeit anlegen</a>
-              <a class="button secondary" href="#produktueberblick">Mehr erfahren</a>
+              <button id="toggle-learn-more-button" class="secondary" type="button">Mehr erfahren</button>
+              <a class="button ghost" href="/demo" target="_blank" rel="noreferrer">Demo ausprobieren</a>
             </div>
             <div class="metrics">
               <div class="metric">
                 <span class="muted">Zugriff für Gäste</span>
-                <strong>Nur per Geheimlink</strong>
+                <strong>Privater Link nur fuer eure Gaeste</strong>
               </div>
               <div class="metric">
                 <span class="muted">Upload-Erlebnis</span>
@@ -39,7 +40,7 @@
           <article id="space-anlegen" class="hero-form panel stack">
             <span class="eyebrow">Hochzeit anlegen</span>
             <h2>Euren Space jetzt vorbereiten</h2>
-            <p class="muted">Name der Feier und E-Mail-Adresse reichen fürs Erste. Nach dem Anlegen bekommt ihr den Geheimlink und das Passwort für den Brautpaar-Bereich direkt angezeigt.</p>
+            <p class="muted">Feiername, E-Mail-Adresse und euer eigenes Passwort reichen für den Start. Danach bekommt ihr sofort euren privaten Link nur fuer eure Gaeste inklusive QR-Code.</p>
             <div class="field">
               <label for="display-name">Name eures Spaces</label>
               <input id="display-name" type="text" placeholder="z. B. Hochzeit Lea & Moritz" />
@@ -48,24 +49,29 @@
               <label for="owner-email">E-Mail-Adresse</label>
               <input id="owner-email" type="email" placeholder="brautpaar@example.com" />
             </div>
+            <div class="field">
+              <label for="admin-password-setup">Passwort fuer den Brautpaar-Bereich</label>
+              <input id="admin-password-setup" type="password" minlength="8" placeholder="Mindestens 8 Zeichen" autocomplete="new-password" />
+            </div>
             <div class="action-row">
               <button id="create-space-button" class="primary" type="button">Space anlegen</button>
+              <a class="button ghost" href="/demo" target="_blank" rel="noreferrer">Direkt Demo starten</a>
             </div>
             <p id="create-space-status" class="status muted"></p>
             <div class="trust-mini-grid">
               <div class="mini-trust-item">Ohne App für Gäste</div>
               <div class="mini-trust-item">Sofort freigeschaltet</div>
-              <div class="mini-trust-item">Geheimer Zugangslink</div>
+              <div class="mini-trust-item">Eigenes Passwort</div>
             </div>
             <section id="create-space-result" class="success-card hidden" aria-live="polite">
               <div class="success-head">
                 <span class="eyebrow">Space bereit</span>
                 <h3>Euer Zugang ist erstellt</h3>
-                <p class="muted">Von hier aus könnt ihr direkt den Gastlink kopieren, den Space öffnen oder die Zugangsdaten für später sichern.</p>
+                <p class="muted">Von hier aus könnt ihr direkt den privaten Link nur fuer eure Gaeste kopieren, den Space öffnen oder eure Zugangsdaten sichern.</p>
               </div>
               <div class="success-grid">
                 <div class="success-block">
-                  <span class="success-label">Gastlink für QR und Gäste</span>
+                  <span class="success-label">Privater Link nur fuer eure Gaeste</span>
                   <a id="result-guest-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
                   <div class="action-row compact-actions">
                     <button id="copy-guest-url-button" class="secondary" type="button">Link kopieren</button>
@@ -86,8 +92,8 @@
                   <p class="subtle-note">Diese Adresse ist später die Basis für Bestätigungsmail, Rechnung und Zugangskommunikation.</p>
                 </div>
                 <div class="success-block qr-block">
-                  <span class="success-label">QR-Code für Gäste</span>
-                  <img id="result-qr-image" class="qr-preview-image" alt="QR-Code fuer den Gastzugang" />
+                  <span class="success-label">QR-Code fuer eure Gaeste</span>
+                  <img id="result-qr-image" class="qr-preview-image" alt="QR-Code fuer den privaten Gastzugang" />
                   <div class="action-row compact-actions">
                     <a id="download-qr-button" class="button secondary" href="#" download="wedding-camera-roll-qr.png">QR-Code speichern</a>
                   </div>
@@ -104,116 +110,132 @@
       </div>
     </section>
 
-    <section class="section grid-3">
-      <article class="card stack">
-        <h2>Geschlossen statt auffindbar</h2>
-        <p class="muted">Es gibt keine öffentliche Übersicht und keine sprechenden URLs. Ohne originalen QR-Code oder Secret-Link kommt niemand an Galerie, Upload oder Vorschaubilder.</p>
-      </article>
-      <article class="card stack">
-        <h2>Für echte Hochzeiten gebaut</h2>
-        <p class="muted">Gäste laden Bilder schnell vom Handy hoch, das Brautpaar verwaltet seinen eigenen Space separat, und das Backoffice behält systemweit den Überblick.</p>
-      </article>
-      <article class="card stack">
-        <h2>Sicher weiterentwickelbar</h2>
-        <p class="muted">Der erste Single-Space-Prototyp bleibt archiviert im Repo. So lässt sich die neue Plattform iterativ verbessern, ohne den bisherigen Referenzstand zu verlieren.</p>
-      </article>
-    </section>
+    <details id="learn-more-panel" class="section panel stack">
+      <summary class="quiet-link" style="width:fit-content; cursor:pointer;">Mehr erfahren</summary>
 
-    <section class="section trust-band" aria-label="Vertrauen und Sicherheit">
-      <div class="trust-band-item">
-        <strong>Keine App nötig</strong>
-        <span>Gäste öffnen den Space direkt im Browser auf iPhone oder Android.</span>
-      </div>
-      <div class="trust-band-item">
-        <strong>Privat per Geheimlink</strong>
-        <span>Kein öffentliches Verzeichnis, keine erratbaren URLs, kein offener Galeriezugang.</span>
-      </div>
-      <div class="trust-band-item">
-        <strong>Brautpaar separat geschützt</strong>
-        <span>Uploads bleiben für Gäste einfach, während euer geschützter Bereich separat gesichert ist.</span>
-      </div>
-      <div class="trust-band-item">
-        <strong>Für den Eventtag gebaut</strong>
-        <span>Wenig Schritte, große Buttons, schnelle Handy-Nutzung und sofortige Freischaltung.</span>
-      </div>
-    </section>
+      <section class="grid-3">
+        <article class="card stack">
+          <h2>Geschlossen statt auffindbar</h2>
+          <p class="muted">Es gibt keine öffentliche Übersicht und keine langen erratbaren Pfade. Ohne euren privaten Link nur fuer eure Gaeste oder den dazugehörigen QR-Code kommt niemand an Galerie, Upload oder Vorschaubilder.</p>
+        </article>
+        <article class="card stack">
+          <h2>Für echte Hochzeiten gebaut</h2>
+          <p class="muted">Gäste laden Bilder schnell vom Handy hoch, das Brautpaar verwaltet seinen eigenen Space separat, und das Backoffice behält systemweit den Überblick.</p>
+        </article>
+        <article class="card stack">
+          <h2>Direkter Demo-Einstieg</h2>
+          <p class="muted">Über die Demo springt ihr sofort in einen echten Beispiel-Space, könnt erste Bilder hochladen und das gesamte Erlebnis direkt ausprobieren.</p>
+        </article>
+      </section>
 
-    <section id="produktueberblick" class="section grid-2">
-      <article class="panel stack">
-        <span class="eyebrow">So läuft es für Gäste</span>
-        <h2>Scannen, hochladen, mitfeiern</h2>
-        <p class="muted">Im Space selbst steht das Sammeln der Fotos im Mittelpunkt: große mobile Upload-Fläche, mehrere Bilder am Stück, kurze Grüße dazu und eine ruhige Galerie, die sich am ersten Prototypen orientiert.</p>
-      </article>
-      <article class="panel stack">
-        <span class="eyebrow">Was ihr direkt bekommt</span>
-        <h2>Geheimlink und Brautpaar-Zugang</h2>
-        <p class="muted">Direkt nach dem Anlegen erhaltet ihr den nicht erratbaren Gastlink für QR-Code und Einladung sowie das Passwort für euren geschützten Bereich innerhalb des Spaces.</p>
-      </article>
-    </section>
+      <section class="section trust-band" aria-label="Vertrauen und Sicherheit">
+        <div class="trust-band-item">
+          <strong>Keine App nötig</strong>
+          <span>Gäste öffnen den Space direkt im Browser auf iPhone oder Android.</span>
+        </div>
+        <div class="trust-band-item">
+          <strong>Privater Link nur fuer eure Gaeste</strong>
+          <span>Kein öffentliches Verzeichnis, keine offene Galerie und keine sichtbare Gästeliste.</span>
+        </div>
+        <div class="trust-band-item">
+          <strong>Brautpaar separat geschützt</strong>
+          <span>Uploads bleiben für Gäste einfach, während euer geschützter Bereich separat gesichert ist.</span>
+        </div>
+        <div class="trust-band-item">
+          <strong>Für den Eventtag gebaut</strong>
+          <span>Wenig Schritte, große Buttons, schnelle Handy-Nutzung und sofortige Freischaltung.</span>
+        </div>
+      </section>
 
-    <section class="section grid-3 process-grid">
-      <article class="card stack process-card">
-        <span class="process-step">1</span>
-        <h2>Space anlegen</h2>
-        <p class="muted">Feiername und E-Mail eintragen. Der Space wird sofort erstellt, später kommt hier der Stripe-Schritt dazwischen.</p>
-      </article>
-      <article class="card stack process-card">
-        <span class="process-step">2</span>
-        <h2>Link oder QR teilen</h2>
-        <p class="muted">Das Brautpaar verteilt den Geheimlink an Gäste oder bindet ihn in Papeterie, Website und QR-Code ein.</p>
-      </article>
-      <article class="card stack process-card">
-        <span class="process-step">3</span>
-        <h2>Am Tag Fotos sammeln</h2>
-        <p class="muted">Gäste laden Bilder direkt vom Handy hoch, während ihr den geschützten Bereich für Ordnung und Überblick nutzt.</p>
-      </article>
-    </section>
+      <section id="produktueberblick" class="section grid-2">
+        <article class="panel stack">
+          <span class="eyebrow">So läuft es für Gäste</span>
+          <h2>Scannen, hochladen, mitfeiern</h2>
+          <p class="muted">Im Space selbst steht das Sammeln der Fotos im Mittelpunkt: große mobile Upload-Fläche, mehrere Bilder am Stück, kurze Grüße dazu und eine ruhige Galerie.</p>
+        </article>
+        <article class="panel stack">
+          <span class="eyebrow">Was ihr direkt bekommt</span>
+          <h2>Privater Link und Brautpaar-Zugang</h2>
+          <p class="muted">Direkt nach dem Anlegen erhaltet ihr euren privaten Link nur fuer eure Gaeste inklusive QR-Code sowie das Passwort für euren geschützten Brautpaar-Bereich.</p>
+        </article>
+      </section>
 
-    <section class="section grid-2">
-      <article class="panel stack">
-        <span class="eyebrow">Geeignet für</span>
-        <h2>Hochzeiten, Geburtstage, Firmenfeiern</h2>
-        <p class="muted">Die Technik ist bewusst event-neutral aufgebaut. Jede Feier erhält ihren eigenen isolierten Raum mit eigener Verwaltung, eigener Medienablage und eigenem geheimen Zugang.</p>
-      </article>
-      <article class="panel stack">
-        <span class="eyebrow">Heute schon nutzbar</span>
-        <h2>Lokaler Demo-Betrieb im WLAN</h2>
-        <p class="muted">Der aktuelle Stand eignet sich bereits für interne Demos und Tests im lokalen Netzwerk. Gäste können den Space direkt auf dem Handy öffnen und Fotos hochladen.</p>
-      </article>
-    </section>
+      <section class="section grid-3 process-grid">
+        <article class="card stack process-card">
+          <span class="process-step">1</span>
+          <h2>Space anlegen</h2>
+          <p class="muted">Feiername, E-Mail und eigenes Passwort eintragen. Der Space wird sofort erstellt, später kommt hier der Stripe-Schritt dazwischen.</p>
+        </article>
+        <article class="card stack process-card">
+          <span class="process-step">2</span>
+          <h2>Link oder QR teilen</h2>
+          <p class="muted">Das Brautpaar verteilt den privaten Link nur fuer eure Gaeste oder bindet ihn in Papeterie, Website und QR-Code ein.</p>
+        </article>
+        <article class="card stack process-card">
+          <span class="process-step">3</span>
+          <h2>Am Tag Fotos sammeln</h2>
+          <p class="muted">Gäste laden Bilder direkt vom Handy hoch, während ihr den geschützten Bereich für Ordnung, Export und Überblick nutzt.</p>
+        </article>
+      </section>
 
-    <section class="section faq-shell" id="faq">
-      <div class="section-heading stack compact-stack faq-heading">
-        <span class="eyebrow">FAQ</span>
-        <h2>Die wichtigsten Fragen vorab</h2>
-        <p class="muted">Die häufigsten Rückfragen zum Ablauf, zum Datenschutz und zur Nutzung am Eventtag.</p>
-      </div>
-      <div class="faq-list">
-        <details class="faq-item" open>
-          <summary>Brauchen unsere Gäste eine App?</summary>
-          <p>Nein. Gäste öffnen einfach den Geheimlink oder scannen den QR-Code und laden ihre Fotos direkt im Browser hoch.</p>
-        </details>
-        <details class="faq-item">
-          <summary>Kann jemand den Space einfach erraten?</summary>
-          <p>Nein. Der Zugang läuft über lange geheime Links. Es gibt kein öffentliches Verzeichnis und keine sprechenden URLs für Spaces.</p>
-        </details>
-        <details class="faq-item">
-          <summary>Was bekommen wir direkt nach dem Anlegen?</summary>
-          <p>Ihr erhaltet sofort den Gastlink für Einladungen oder QR-Codes sowie das Passwort für den geschützten Brautpaar-Bereich.</p>
-        </details>
-        <details class="faq-item">
-          <summary>Wie wird später bezahlt?</summary>
-          <p>Der spätere Stripe-Schritt wird genau zwischen Formular und Freischaltung gesetzt. Der aktuelle MVP erstellt den Space noch direkt.</p>
-        </details>
-        <details class="faq-item">
-          <summary>Wer darf Fotos sortieren oder entfernen?</summary>
-          <p>Das Brautpaar oder die verantwortliche Person nutzt dafür den geschützten Bereich innerhalb des jeweiligen Spaces.</p>
-        </details>
-      </div>
-    </section>
+      <section class="section grid-2">
+        <article class="panel stack">
+          <span class="eyebrow">Geeignet für</span>
+          <h2>Hochzeiten, Geburtstage, Firmenfeiern</h2>
+          <p class="muted">Die Technik ist bewusst event-neutral aufgebaut. Jede Feier erhält ihren eigenen isolierten Raum mit eigener Verwaltung, eigener Medienablage und eigenem privaten Gastzugang.</p>
+        </article>
+        <article class="panel stack">
+          <span class="eyebrow">Heute schon nutzbar</span>
+          <h2>Demo-Betrieb und echte Events</h2>
+          <p class="muted">Die Demo zeigt sofort das echte Erlebnis. Im Live-Betrieb kommen dazu QR-Druckvorlagen, ZIP-Export, Cloud-Sync und Health-Checks für stabile Events.</p>
+        </article>
+      </section>
 
-    <p class="footer-note">Aktueller Stand: stabile Multi-Space-Basis mit Self-Service-Anlage, geheimen Event-Links und separatem Brautpaar-Bereich.</p>
+      <section class="section faq-shell" id="faq">
+        <div class="section-heading stack compact-stack faq-heading">
+          <span class="eyebrow">FAQ</span>
+          <h2>Die wichtigsten Fragen vorab</h2>
+          <p class="muted">Die häufigsten Rückfragen zum Ablauf, zum Datenschutz und zur Nutzung am Eventtag.</p>
+        </div>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>Brauchen unsere Gäste eine App?</summary>
+            <p>Nein. Gäste öffnen einfach den privaten Link nur fuer eure Gaeste oder scannen den QR-Code und laden ihre Fotos direkt im Browser hoch.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Kann jemand den Space einfach erraten?</summary>
+            <p>Nein. Der Zugang läuft über kurze, aber weiterhin starke private Links. Es gibt kein öffentliches Verzeichnis und keine offene Galerie.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Was bekommen wir direkt nach dem Anlegen?</summary>
+            <p>Ihr erhaltet sofort euren privaten Link nur fuer eure Gaeste, den QR-Code und das von euch gesetzte Passwort für den geschützten Brautpaar-Bereich.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Wie wird später bezahlt?</summary>
+            <p>Der spätere Stripe-Schritt wird genau zwischen Formular und Freischaltung gesetzt. Der aktuelle MVP erstellt den Space noch direkt.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Wer darf Fotos sortieren oder entfernen?</summary>
+            <p>Das Brautpaar oder die verantwortliche Person nutzt dafür den geschützten Bereich innerhalb des jeweiligen Spaces.</p>
+          </details>
+        </div>
+      </section>
+    </details>
+
+    <p class="footer-note">Aktueller Stand: stabile Multi-Space-Basis mit Self-Service-Anlage, privaten Gastlinks und separatem Brautpaar-Bereich.</p>
   </main>
+
+  <footer class="site-footer">
+    <div class="page-shell site-footer-inner">
+      <div class="site-footer-copy">Wedding Camera Roll · private Eventgalerien mit QR-Upload</div>
+      <nav class="footer-nav" aria-label="Rechtliches und Hilfe">
+        <a class="footer-link" href="/impressum.html">Impressum</a>
+        <a class="footer-link" href="/#faq">FAQ</a>
+        <a class="footer-link" href="/agb.html">AGB</a>
+        <a class="footer-link" href="/datenschutz.html">Datenschutzerklärung</a>
+      </nav>
+    </div>
+  </footer>
 
   <a class="sticky-create-cta" href="#space-anlegen">Hochzeit anlegen</a>
 
@@ -223,6 +245,7 @@
     const createSpaceResult = document.getElementById('create-space-result');
     const displayNameInput = document.getElementById('display-name');
     const ownerEmailInput = document.getElementById('owner-email');
+    const adminPasswordSetupInput = document.getElementById('admin-password-setup');
     const resultGuestUrl = document.getElementById('result-guest-url');
     const resultAdminPassword = document.getElementById('result-admin-password');
     const resultOwnerEmail = document.getElementById('result-owner-email');
@@ -232,6 +255,8 @@
     const downloadQrButton = document.getElementById('download-qr-button');
     const openSpaceButton = document.getElementById('open-space-button');
     const shareGuestUrlButton = document.getElementById('share-guest-url-button');
+    const toggleLearnMoreButton = document.getElementById('toggle-learn-more-button');
+    const learnMorePanel = document.getElementById('learn-more-panel');
     let lastCreatedSpace = null;
 
     function setStatus(message, kind = 'muted') {
@@ -251,6 +276,7 @@
     function validateInputs() {
       const displayName = displayNameInput.value.trim();
       const ownerEmail = ownerEmailInput.value.trim();
+      const adminPassword = adminPasswordSetupInput.value;
 
       if (displayName.length < 3) {
         setStatus('Bitte gebt einen aussagekräftigen Namen für euren Space an.', 'error');
@@ -264,7 +290,13 @@
         return null;
       }
 
-      return { displayName, ownerEmail };
+      if (adminPassword.length < 8) {
+        setStatus('Bitte vergibt ein Passwort mit mindestens 8 Zeichen für euren Brautpaar-Bereich.', 'error');
+        adminPasswordSetupInput.focus();
+        return null;
+      }
+
+      return { displayName, ownerEmail, adminPassword };
     }
 
     function renderSuccess(payload) {
@@ -310,9 +342,26 @@
     }
 
     createSpaceButton.addEventListener('click', createSpace);
+    toggleLearnMoreButton.addEventListener('click', () => {
+      learnMorePanel.open = true;
+      learnMorePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    function revealHashTarget() {
+      if (!window.location.hash) return;
+      const target = document.querySelector(window.location.hash);
+      if (!target) return;
+      if (learnMorePanel.contains(target)) {
+        learnMorePanel.open = true;
+      }
+      setTimeout(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 30);
+    }
+
     copyGuestUrlButton.addEventListener('click', async () => {
       if (!lastCreatedSpace) return;
-      await copyText(lastCreatedSpace.guestUrl, 'Gastlink kopiert.');
+      await copyText(lastCreatedSpace.guestUrl, 'Privater Link fuer eure Gaeste kopiert.');
     });
     copyAdminPasswordButton.addEventListener('click', async () => {
       if (!lastCreatedSpace) return;
@@ -323,13 +372,16 @@
       try {
         await navigator.share({
           title: 'Wedding Camera Roll',
-          text: 'Hier ist unser privater Foto-Space für die Feier.',
+          text: 'Hier ist unser privater Link nur fuer eure Gaeste.',
           url: lastCreatedSpace.guestUrl
         });
       } catch {
         // Nutzerabbruch nicht als Fehler behandeln.
       }
     });
+
+    window.addEventListener('hashchange', revealHashTarget);
+    revealHashTarget();
   </script>
 </body>
 </html>

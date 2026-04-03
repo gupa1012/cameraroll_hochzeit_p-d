@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>__SPACE_NAME__</title>
-  <meta name="description" content="Privater Hochzeits-Space mit geheimem Zugang und mobilem Foto-Upload direkt im Browser." />
+  <meta name="description" content="Privater Hochzeits-Space mit privatem Gastzugang und mobilem Foto-Upload direkt im Browser." />
   <meta name="robots" content="noindex,nofollow,noarchive" />
   <meta name="theme-color" content="#f5e6d3" />
   <link rel="stylesheet" href="/app.css" />
@@ -15,23 +15,29 @@
       <span class="header-rings">💍</span>
       <span class="eyebrow">Privater Hochzeits-Space</span>
       <h1 id="space-title">__SPACE_NAME__</h1>
-      <p class="space-intro">Teile eure Bilder direkt vom Handy und sammle Erinnerungen an einem Ort. Dieser Bereich ist nur über euren echten Geheimlink oder den QR-Code erreichbar.</p>
+      <p class="space-intro">Teile eure Bilder direkt vom Handy und sammle Erinnerungen an einem Ort. Dieser Bereich ist über euren privaten Link nur fuer eure Gaeste oder den QR-Code erreichbar.</p>
       <div class="badge-row hero-badges">
         <span class="badge">Geschützter Zugang</span>
         <span id="upload-limit-badge" class="badge">__UPLOAD_LIMIT_LABEL__</span>
         <span class="badge">Kommentar bis __MAX_COMMENT_LENGTH__ Zeichen</span>
       </div>
       <div class="mobile-note">📱 Mobile Webapp ohne App-Download · für Gäste direkt im Browser</div>
+      <p id="demo-space-note" class="status-msg muted hidden">Demo-Bereich: Hier koennt ihr den Upload, die Galerie und den Brautpaar-Bereich direkt ausprobieren.</p>
+      <div class="space-highlight-strip" aria-label="Space-Highlights">
+        <span class="space-highlight-chip">QR-Link statt Login</span>
+        <span class="space-highlight-chip">Ohne App fuer Gaeste</span>
+        <span class="space-highlight-chip">Privater Feed fuer den Tag</span>
+      </div>
     </div>
   </header>
 
   <main class="page-shell">
     <section class="upload-section split-layout">
-      <article class="section-card stack">
+      <article id="space-upload-card" class="section-card stack upload-surface-card">
         <div class="section-heading stack compact-stack">
           <span class="eyebrow">Fotos hochladen</span>
           <h2>Momente vom Tag hinzufügen</h2>
-          <p class="muted">Mehrere Bilder gleichzeitig sind möglich. Die Galerie lädt danach automatisch neu.</p>
+          <p class="muted">Mehrere Bilder gleichzeitig sind moeglich. Originaldateien bleiben unveraendert, die Galerie laedt danach automatisch neu.</p>
         </div>
 
         <div class="drop-zone" id="drop-zone">
@@ -91,6 +97,35 @@
             <button id="restore-selected-button" class="refresh-btn hidden" type="button">Aus Archiv zurückholen</button>
             <button id="delete-selected-button" class="refresh-btn hidden" type="button">Archiv endgültig löschen</button>
           </div>
+
+          <div id="guest-access-tools" class="success-card hidden">
+            <div class="success-grid">
+              <div class="success-block">
+                <span class="success-label">Privater Link nur fuer eure Gaeste</span>
+                <a id="guest-access-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
+                <div class="action-row compact-actions">
+                  <button id="copy-guest-access-button" class="upload-btn" type="button">Link kopieren</button>
+                  <button id="refresh-guest-access-button" class="refresh-btn" type="button">QR-Code neu laden</button>
+                  <button id="print-guest-access-button" class="refresh-btn" type="button">Papeterie-Druckvorlage</button>
+                </div>
+              </div>
+              <div class="success-block qr-block">
+                <span class="success-label">QR-Code fuer eure Gaeste</span>
+                <img id="guest-access-qr-image" class="qr-preview-image" alt="QR-Code fuer den privaten Gastzugang" />
+                <div class="action-row compact-actions">
+                  <a id="download-guest-access-qr-button" class="button secondary" href="#" download="space-qr.png">QR-Code speichern</a>
+                </div>
+              </div>
+              <div class="success-block">
+                <span class="success-label">Export und Sync</span>
+                <p class="muted">Ladet alle Originale als ZIP herunter oder sendet den Export direkt an euren Cloud-Sync.</p>
+                <div class="action-row compact-actions">
+                  <a id="download-export-button" class="button secondary" href="#">ZIP exportieren</a>
+                  <button id="sync-export-button" class="refresh-btn hidden" type="button">Cloud-Sync starten</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <p id="admin-status" class="status-msg muted"></p>
@@ -104,9 +139,10 @@
 
     <section class="gallery-section">
       <div class="gallery-header">
-        <div>
+        <div class="gallery-header-copy">
           <span class="eyebrow">Galerie</span>
-          <h2 id="gallery-heading">Aktive Fotos</h2>
+          <h2 id="gallery-heading">Hochzeits-Feed</h2>
+          <p class="space-feed-copy">Mehr Bild, weniger Technik. Wie ein privater Social Feed nur fuer eure Feier.</p>
         </div>
         <div class="gallery-header-actions">
           <div class="gallery-tabs show" aria-label="Galerieansicht umschalten">
@@ -120,6 +156,20 @@
       <div id="gallery" class="gallery-grid space-gallery-grid"></div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="page-shell site-footer-inner">
+      <div class="site-footer-copy">Wedding Camera Roll · privater Link, QR-Code und geschützter Brautpaar-Bereich</div>
+      <nav class="footer-nav" aria-label="Rechtliches und Hilfe">
+        <a class="footer-link" href="/impressum.html">Impressum</a>
+        <a class="footer-link" href="/#faq">FAQ</a>
+        <a class="footer-link" href="/agb.html">AGB</a>
+        <a class="footer-link" href="/datenschutz.html">Datenschutzerklärung</a>
+      </nav>
+    </div>
+  </footer>
+
+  <a class="sticky-space-cta" href="#space-upload-card">Foto hochladen</a>
 
   <script>
     const THEMES = [
@@ -195,6 +245,7 @@
     const uploadHint = document.getElementById('upload-hint');
     const uploadLimitBadge = document.getElementById('upload-limit-badge');
     const commentInput = document.getElementById('comment-input');
+    const demoSpaceNote = document.getElementById('demo-space-note');
     const adminPasswordInput = document.getElementById('admin-password');
     const adminLoginButton = document.getElementById('admin-login-button');
     const adminLogoutButton = document.getElementById('admin-logout-button');
@@ -204,11 +255,23 @@
     const restoreSelectedButton = document.getElementById('restore-selected-button');
     const deleteSelectedButton = document.getElementById('delete-selected-button');
     const deviceIdValue = document.getElementById('device-id-value');
+    const guestAccessTools = document.getElementById('guest-access-tools');
+    const guestAccessUrl = document.getElementById('guest-access-url');
+    const guestAccessQrImage = document.getElementById('guest-access-qr-image');
+    const downloadGuestAccessQrButton = document.getElementById('download-guest-access-qr-button');
+    const copyGuestAccessButton = document.getElementById('copy-guest-access-button');
+    const refreshGuestAccessButton = document.getElementById('refresh-guest-access-button');
+    const printGuestAccessButton = document.getElementById('print-guest-access-button');
+    const downloadExportButton = document.getElementById('download-export-button');
+    const syncExportButton = document.getElementById('sync-export-button');
 
     let adminUnlocked = false;
     let galleryScope = 'active';
     let selectedPhotoIds = new Set();
     let pendingFiles = [];
+    let uploadRequestTimeoutMs = 0;
+    let exportSyncEnabled = false;
+    let exportSyncLabel = 'Cloud-Sync';
 
     function createDeviceId() {
       if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -284,6 +347,15 @@
       element.className = `status-msg ${kind}`;
     }
 
+    async function copyText(value, successMessage) {
+      try {
+        await navigator.clipboard.writeText(value);
+        setStatus(adminStatusElement, successMessage, 'success');
+      } catch {
+        setStatus(adminStatusElement, 'Kopieren hat im Browser nicht funktioniert. Bitte kurz manuell kopieren.', 'error');
+      }
+    }
+
     function formatDate(value) {
       return new Intl.DateTimeFormat('de-DE', {
         dateStyle: 'medium',
@@ -343,7 +415,7 @@
       openButton.target = '_blank';
       openButton.rel = 'noreferrer';
       openButton.className = 'link-button soft-link';
-      openButton.textContent = 'Original öffnen';
+      openButton.textContent = 'Oeffnen';
       actionRow.append(openButton);
 
       if (isOwnPhoto || adminUnlocked) {
@@ -425,7 +497,7 @@
         ? 'Archivierte Fotos'
         : galleryScope === 'mine'
           ? 'Meine Bilder'
-          : 'Aktive Fotos';
+          : 'Hochzeits-Feed';
       archivedScopeButton.classList.toggle('hidden', !adminUnlocked);
       restoreSelectedButton.classList.toggle('hidden', galleryScope !== 'archived');
       deleteSelectedButton.classList.toggle('hidden', galleryScope !== 'archived');
@@ -441,9 +513,38 @@
       const config = await response.json();
       document.title = config.space.displayName;
       document.getElementById('space-title').textContent = config.space.displayName;
-      uploadHint.textContent = `Galerie oder Dateispeicher oeffnen · mehrere Bilder auf einmal · ${config.uploadLimitLabel || 'Ohne Uploadlimit'}`;
-      uploadLimitBadge.textContent = config.uploadLimitLabel || 'Ohne Uploadlimit';
+      uploadHint.textContent = `Galerie oder Dateispeicher oeffnen · mehrere Bilder auf einmal · ${config.uploadLimitLabel || 'Originaldatei ohne Uploadlimit'}`;
+      uploadLimitBadge.textContent = config.uploadLimitLabel || 'Originaldatei ohne Uploadlimit';
       commentInput.maxLength = config.maxCommentLength || __MAX_COMMENT_LENGTH__;
+      uploadRequestTimeoutMs = Number.isFinite(config.uploadRequestTimeoutMs) ? config.uploadRequestTimeoutMs : 0;
+      exportSyncEnabled = Boolean(config.exportSyncEnabled);
+      exportSyncLabel = config.exportSyncLabel || 'Cloud-Sync';
+      syncExportButton.textContent = exportSyncLabel;
+      syncExportButton.classList.toggle('hidden', !exportSyncEnabled);
+      demoSpaceNote.classList.toggle('hidden', !config.demoMode);
+      downloadExportButton.href = `${spaceBasePath}/api/admin/export.zip`;
+    }
+
+    async function loadGuestAccessTools() {
+      if (!adminUnlocked) {
+        guestAccessTools.classList.add('hidden');
+        return;
+      }
+
+      const response = await fetch(`${spaceBasePath}/api/admin/guest-access`, {
+        credentials: 'same-origin'
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Privater Link und QR-Code konnten nicht geladen werden.');
+      }
+
+      guestAccessTools.classList.remove('hidden');
+      guestAccessUrl.href = payload.guestUrl;
+      guestAccessUrl.textContent = payload.guestUrl;
+      guestAccessQrImage.src = payload.qrCodeDataUrl;
+      downloadGuestAccessQrButton.href = payload.qrCodeDataUrl;
+      printGuestAccessButton.dataset.printUrl = payload.qrPrintUrl;
     }
 
     async function refreshAdminState() {
@@ -454,6 +555,7 @@
       adminLogoutButton.classList.toggle('hidden', !adminUnlocked);
       archivedScopeButton.classList.toggle('hidden', !adminUnlocked);
       if (!adminUnlocked) {
+        guestAccessTools.classList.add('hidden');
         if (galleryScope === 'archived') {
           galleryScope = 'active';
         }
@@ -522,7 +624,7 @@
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${spaceBasePath}/api/upload`);
         xhr.withCredentials = true;
-        xhr.timeout = 180000;
+        xhr.timeout = uploadRequestTimeoutMs;
 
         xhr.upload.addEventListener('progress', event => {
           if (!event.lengthComputable) {
@@ -662,6 +764,7 @@
 
       adminPasswordInput.value = '';
       await refreshAdminState();
+      await loadGuestAccessTools();
       await loadGallery();
       setStatus(adminStatusElement, 'Brautpaar-Bereich aktiv.', 'success');
     }
@@ -698,6 +801,25 @@
 
       setStatus(adminStatusElement, successMessage, 'success');
       await loadGallery();
+    }
+
+    async function syncExport() {
+      setStatus(adminStatusElement, `${exportSyncLabel} wird vorbereitet…`);
+      const response = await fetch(`${spaceBasePath}/api/admin/export-sync`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(adminStatusElement, payload.error || `${exportSyncLabel} fehlgeschlagen.`, 'error');
+        return;
+      }
+
+      setStatus(adminStatusElement, `Export erfolgreich an ${payload.remotePath} uebergeben.`, 'success');
     }
 
     document.querySelectorAll('.scope-button').forEach(button => {
@@ -737,11 +859,32 @@
     archiveSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/delete-selected`, 'Auswahl archiviert.'));
     restoreSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/restore-selected`, 'Auswahl wiederhergestellt.'));
     deleteSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/delete-archived-selected`, 'Archivierte Auswahl endgültig gelöscht.'));
+    copyGuestAccessButton.addEventListener('click', async () => {
+      await copyText(guestAccessUrl.href, 'Privater Link fuer eure Gaeste kopiert.');
+    });
+    refreshGuestAccessButton.addEventListener('click', async () => {
+      try {
+        await loadGuestAccessTools();
+        setStatus(adminStatusElement, 'QR-Code und privater Link neu geladen.', 'success');
+      } catch (error) {
+        setStatus(adminStatusElement, error.message, 'error');
+      }
+    });
+    printGuestAccessButton.addEventListener('click', () => {
+      if (!printGuestAccessButton.dataset.printUrl) return;
+      window.open(printGuestAccessButton.dataset.printUrl, '_blank', 'noopener');
+    });
+    syncExportButton.addEventListener('click', syncExport);
     deviceIdValue.textContent = getDeviceId();
     applyTheme(0);
 
     Promise.all([loadConfig(), refreshAdminState()])
-      .then(loadGallery)
+      .then(async () => {
+        if (adminUnlocked) {
+          await loadGuestAccessTools();
+        }
+        await loadGallery();
+      })
       .catch(error => {
         galleryElement.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><p>${error.message}</p></div>`;
       });

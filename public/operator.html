@@ -34,7 +34,7 @@
       <article class="panel stack">
         <span class="eyebrow">Wichtig</span>
         <h2>Was du hier direkt erledigen kannst</h2>
-        <p class="muted">Spaces anlegen, Überblick behalten, Zugriff bei Bedarf sperren oder freigeben, Gastlinks neu ausgeben und Admin-Passwörter zurücksetzen. Damit ist die operative Basis schon vollständig testbar.</p>
+        <p class="muted">Spaces anlegen, Überblick behalten, Zugriff bei Bedarf sperren oder freigeben, private Gastlinks neu ausgeben und Admin-Passwörter zurücksetzen. Damit ist die operative Basis schon vollständig testbar.</p>
       </article>
     </section>
 
@@ -54,6 +54,10 @@
           <div class="field">
             <label for="space-owner-email">Eigentümer-E-Mail</label>
             <input id="space-owner-email" type="email" placeholder="brautpaar@example.com" />
+          </div>
+          <div class="field">
+            <label for="space-admin-password">Passwort für den Brautpaar-Bereich</label>
+            <input id="space-admin-password" type="password" placeholder="Mindestens 8 Zeichen" autocomplete="new-password" />
           </div>
           <div class="action-row">
             <button id="create-space-button" class="primary" type="button">Space anlegen</button>
@@ -99,6 +103,18 @@
       </article>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="page-shell site-footer-inner">
+      <div class="site-footer-copy">Wedding Camera Roll · Betreiber-Backoffice</div>
+      <nav class="footer-nav" aria-label="Rechtliches und Hilfe">
+        <a class="footer-link" href="/impressum.html">Impressum</a>
+        <a class="footer-link" href="/#faq">FAQ</a>
+        <a class="footer-link" href="/agb.html">AGB</a>
+        <a class="footer-link" href="/datenschutz.html">Datenschutzerklärung</a>
+      </nav>
+    </div>
+  </footer>
 
   <script>
     const loginView = document.getElementById('operator-login-view');
@@ -152,7 +168,7 @@
     function renderSecretBox(title, lines, options = {}) {
       secretResult.classList.remove('hidden');
       const qrMarkup = options.qrCodeDataUrl
-        ? `<div class="secret-qr-box"><img class="qr-preview-image" src="${options.qrCodeDataUrl}" alt="QR-Code fuer den Gastlink"><a class="quiet-link" href="${options.qrCodeDataUrl}" download="space-qr.png">QR-Code speichern</a></div>`
+        ? `<div class="secret-qr-box"><img class="qr-preview-image" src="${options.qrCodeDataUrl}" alt="QR-Code fuer den privaten Gastlink"><a class="quiet-link" href="${options.qrCodeDataUrl}" download="space-qr.png">QR-Code speichern</a></div>`
         : '';
       secretResult.innerHTML = `<div class="secret-box-content"><div><strong>${title}</strong><br>${lines.join('<br>')}</div>${qrMarkup}</div>`;
     }
@@ -248,17 +264,17 @@
         const rotateButton = document.createElement('button');
         rotateButton.type = 'button';
         rotateButton.className = 'ghost';
-        rotateButton.textContent = 'Gastlink rotieren';
+        rotateButton.textContent = 'Privaten Link erneuern';
         rotateButton.addEventListener('click', async () => {
-          if (!confirmDangerousAction(`Gastlink fuer "${space.displayName}" wirklich rotieren? Der bisherige Link und bestehende QR-Codes verlieren sofort ihre Gueltigkeit.`)) {
+          if (!confirmDangerousAction(`Privaten Link fuer "${space.displayName}" wirklich erneuern? Der bisherige Link und bestehende QR-Codes verlieren sofort ihre Gueltigkeit.`)) {
             return;
           }
           const payload = await operatorPost(`/api/operator/spaces/${encodeURIComponent(space.id)}/rotate-guest-link`);
           if (payload) {
-            renderSecretBox('Neuer Gastlink', [`<a href="${payload.guestUrl}" target="_blank" rel="noreferrer">${payload.guestUrl}</a>`], {
+            renderSecretBox('Neuer privater Link', [`<a href="${payload.guestUrl}" target="_blank" rel="noreferrer">${payload.guestUrl}</a>`], {
               qrCodeDataUrl: payload.qrCodeDataUrl
             });
-            setStatus(createSpaceStatus, 'Gastlink erfolgreich rotiert.', 'success');
+            setStatus(createSpaceStatus, 'Privater Link erfolgreich erneuert.', 'success');
           }
         });
 
@@ -302,15 +318,17 @@
       setStatus(createSpaceStatus, 'Space wird angelegt…');
       const payload = await operatorPost('/api/operator/spaces', {
         displayName: document.getElementById('space-display-name').value,
-        ownerEmail: document.getElementById('space-owner-email').value
+        ownerEmail: document.getElementById('space-owner-email').value,
+        adminPassword: document.getElementById('space-admin-password').value
       });
       if (!payload) return;
 
       document.getElementById('space-display-name').value = '';
       document.getElementById('space-owner-email').value = '';
+      document.getElementById('space-admin-password').value = '';
       setStatus(createSpaceStatus, 'Space erfolgreich angelegt.', 'success');
       renderSecretBox('Neuer Space', [
-        `Gastlink: <a href="${payload.guestUrl}" target="_blank" rel="noreferrer">${payload.guestUrl}</a>`,
+        `Privater Link: <a href="${payload.guestUrl}" target="_blank" rel="noreferrer">${payload.guestUrl}</a>`,
         `Admin-Passwort: <code>${payload.adminPassword}</code>`
       ], {
         qrCodeDataUrl: payload.qrCodeDataUrl

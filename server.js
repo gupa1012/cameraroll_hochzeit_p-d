@@ -3,133 +3,73 @@
 const express = require('express');
 const multer = require('multer');
 const { DatabaseSync } = require('node:sqlite');
-const { createHash, randomBytes, timingSafeEqual } = require('node:crypto');
-const os = require('node:os');
+const { execFile } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
+const fsp = require('node:fs/promises');
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
 const rateLimit = require('express-rate-limit');
 const QRCode = require('qrcode');
+const archiver = require('archiver');
+const {
+  assertWritableDirectory,
+  buildAppConfig,
+  compareSecret,
+  ensureDirectory,
+  escapeHtml,
+  getCommentValue,
+  getNetworkUrls,
+  getSpacePath,
+  getUploadLimitLabel,
+  getUploaderMetadata,
+  hashValue,
+  isValidAdminPassword,
+  isSafeToken,
+  isValidDeviceId,
+  isValidEmail,
+  normalizeDisplayName,
+  normalizeEmail,
+  nowIso,
+  parseCookies,
+  randomPassword,
+  randomPublicId,
+  randomToken,
+  serializeCookie
+} = require('./lib/gallery-core');
 
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
-const ROOT_DIR = __dirname;
-const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
-const DATA_DIR = path.join(ROOT_DIR, 'data');
-const STORAGE_DIR = path.join(ROOT_DIR, 'storage');
-const SPACES_DIR = path.join(STORAGE_DIR, 'spaces');
-const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'platform.sqlite');
+const appConfig = buildAppConfig({ env: process.env, rootDir: __dirname });
+const {
+  PORT,
+  HOST,
+  ROOT_DIR,
+  PUBLIC_DIR,
+  DATA_DIR,
+  STORAGE_DIR,
+  SPACES_DIR,
+  DB_PATH,
+  MAX_COMMENT_LENGTH,
+  MAX_FILE_MB,
+  UPLOAD_REQUEST_TIMEOUT_MS,
+  OPERATOR_PASSWORD,
+  TRUST_PROXY,
+  rateLimits
+} = appConfig;
 const INDEX_PATH = path.join(PUBLIC_DIR, 'index.html');
 const SPACE_PAGE_PATH = path.join(PUBLIC_DIR, 'space.html');
 const OPERATOR_PAGE_PATH = path.join(PUBLIC_DIR, 'operator.html');
 const THEME_BACKGROUND_PATH = path.join(ROOT_DIR, 'Generated Image March 29, 2026 - 9_05PM.png');
-const OPERATOR_PASSWORD = String(process.env.OPERATOR_PASSWORD || '').trim();
-const MAX_COMMENT_LENGTH = 500;
-const MAX_FILE_MB = getMaxFileMb(process.env.MAX_FILE_MB);
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const SAFE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{10,}$/;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const SPACE_STATUS_ACTIVE = 'active';
 const SPACE_STATUS_SUSPENDED = 'suspended';
 const NOINDEX_VALUE = 'noindex, nofollow, noarchive';
-const TRUST_PROXY = getTrustProxySetting(process.env.TRUST_PROXY);
-
-function getMaxFileMb(value) {
-  const rawValue = String(value || '').trim().toLowerCase();
-  if (!rawValue || rawValue === '0' || rawValue === 'none' || rawValue === 'unlimited') {
-    return null;
-  }
-
-  const parsedValue = Number.parseInt(rawValue, 10);
-  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-    return null;
-  }
-
-  return parsedValue;
-}
-
-function getUploadLimitLabel() {
-  if (!MAX_FILE_MB) return 'Ohne Uploadlimit';
-  return `${MAX_FILE_MB} MB je Bild`;
-}
-
-function getTrustProxySetting(value) {
-  if (value === undefined || value === null || String(value).trim() === '') return false;
-  if (value === 'true') return 1;
-
-  const numericValue = Number(value);
-  if (Number.isInteger(numericValue) && numericValue >= 0) {
-    return numericValue;
-  }
-
-  return String(value);
-}
-
-function ensureDirectory(dirPath) {
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
-}
-
-function getNetworkUrls(port) {
-  const interfaces = os.networkInterfaces();
-  const urls = [];
-
-  for (const addresses of Object.values(interfaces)) {
-    for (const address of addresses || []) {
-      if (address.family !== 'IPv4' || address.internal) continue;
-      urls.push(`http://${address.address}:${port}`);
-    }
-  }
-
-  return [...new Set(urls)];
-}
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function hashValue(value) {
-  return createHash('sha256').update(String(value || '')).digest('hex');
-}
-
-function compareSecret(rawValue, hashedValue) {
-  if (!rawValue || !hashedValue) return false;
-
-  const expected = Buffer.from(hashedValue, 'hex');
-  const received = Buffer.from(hashValue(rawValue), 'hex');
-  if (expected.length !== received.length) return false;
-  return timingSafeEqual(expected, received);
-}
-
-function randomToken(size = 24) {
-  return randomBytes(size).toString('base64url');
-}
-
-function randomPublicId() {
-  return randomToken(9);
-}
-
-function randomPassword(length = 16) {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  const bytes = randomBytes(length);
-  let output = '';
-
-  for (let index = 0; index < length; index += 1) {
-    output += alphabet[bytes[index] % alphabet.length];
-  }
-
-  return output;
-}
-
-function escapeHtml(value) {
-  return String(value || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
+const EXPORTS_DIR = path.join(DATA_DIR, 'exports');
+const DEMO_SPACE_NAME = String(process.env.DEMO_SPACE_NAME || 'Demo Hochzeit').trim() || 'Demo Hochzeit';
+const DEMO_OWNER_EMAIL = String(process.env.DEMO_OWNER_EMAIL || 'demo@example.invalid').trim() || 'demo@example.invalid';
+const EXPORT_SYNC_ENABLED = Boolean(String(process.env.RCLONE_REMOTE || '').trim());
+const EXPORT_SYNC_LABEL = String(process.env.EXPORT_SYNC_LABEL || 'Google Drive / Cloud Sync').trim() || 'Google Drive / Cloud Sync';
+const EXPORT_SYNC_REMOTE = String(process.env.RCLONE_REMOTE || '').trim();
+const EXPORT_SYNC_PREFIX = String(process.env.RCLONE_EXPORT_PREFIX || 'wedding-camera-roll').trim().replace(/^\/+|\/+$/g, '');
 
 function renderTemplate(filePath, replacements = {}) {
   let html = fs.readFileSync(filePath, 'utf8');
@@ -137,56 +77,6 @@ function renderTemplate(filePath, replacements = {}) {
     html = html.replaceAll(`__${key}__`, String(value));
   }
   return html;
-}
-
-function normalizeDisplayName(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 80);
-}
-
-function normalizeEmail(value) {
-  return String(value || '').trim().toLowerCase().slice(0, 200);
-}
-
-function isValidDeviceId(value) {
-  return UUID_PATTERN.test(String(value || '').trim());
-}
-
-function isSafeToken(value) {
-  return SAFE_TOKEN_PATTERN.test(String(value || '').trim());
-}
-
-function getCommentValue(value) {
-  if (value === null || value === undefined) return '';
-  return String(value).trim().slice(0, MAX_COMMENT_LENGTH);
-}
-
-function parseCookies(rawCookieHeader) {
-  const cookies = {};
-
-  for (const part of String(rawCookieHeader || '').split(';')) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
-    const separator = trimmed.indexOf('=');
-    if (separator === -1) continue;
-    const name = trimmed.slice(0, separator).trim();
-    const value = trimmed.slice(separator + 1).trim();
-    if (!name) continue;
-    cookies[name] = decodeURIComponent(value);
-  }
-
-  return cookies;
-}
-
-function serializeCookie(name, value, options = {}) {
-  const parts = [`${name}=${encodeURIComponent(value)}`];
-
-  if (options.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
-  if (options.path) parts.push(`Path=${options.path}`);
-  if (options.httpOnly) parts.push('HttpOnly');
-  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
-  if (options.secure) parts.push('Secure');
-
-  return parts.join('; ');
 }
 
 function setNoIndex(res) {
@@ -197,12 +87,16 @@ function getRequestBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
 }
 
-function getSpacePath(publicId, guestToken) {
-  return `/g/${encodeURIComponent(publicId)}/${encodeURIComponent(guestToken)}`;
-}
-
 function getSpaceUrl(req, publicId, guestToken) {
   return `${getRequestBaseUrl(req)}${getSpacePath(publicId, guestToken)}`;
+}
+
+function getCurrentSpaceBasePath(req) {
+  return req.baseUrl || getSpacePath(req.space.public_id, req.guestToken);
+}
+
+function getCurrentSpaceAdminCookiePath(req) {
+  return `${getCurrentSpaceBasePath(req)}/api/admin`;
 }
 
 async function createQrCodeDataUrl(value) {
@@ -230,8 +124,148 @@ async function buildGuestAccessPayload(req, publicId, guestToken, extraFields = 
   };
 }
 
-function getSpaceAdminCookiePath(publicId, guestToken) {
-  return `${getSpacePath(publicId, guestToken)}/api/admin`;
+async function buildSpaceAccessPayload(req, extraFields = {}) {
+  const guestUrl = `${getRequestBaseUrl(req)}${getCurrentSpaceBasePath(req)}`;
+  const qrCodeDataUrl = await createQrCodeDataUrl(guestUrl);
+
+  return {
+    guestPath: getCurrentSpaceBasePath(req),
+    guestUrl,
+    qrCodeDataUrl,
+    qrPrintUrl: `${getCurrentSpaceBasePath(req)}/api/admin/qr-print`,
+    ...extraFields
+  };
+}
+
+function createPrintableQrHtml({ spaceName, guestUrl, qrCodeDataUrl }) {
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(spaceName)} - QR Druckvorlage</title>
+  <style>
+    body { margin: 0; font-family: Georgia, 'Times New Roman', serif; color: #43352f; background: #f8f3ee; }
+    .sheet { min-height: 100vh; display: grid; place-items: center; padding: 32px; }
+    .card { width: min(760px, 100%); padding: 40px; background: white; border-radius: 28px; box-shadow: 0 20px 60px rgba(67, 53, 47, 0.12); border: 1px solid rgba(67, 53, 47, 0.08); }
+    .eyebrow { display: inline-block; padding: 8px 14px; border-radius: 999px; background: #f5ebe3; color: #8a7067; font: 700 12px/1.2 'Segoe UI', sans-serif; text-transform: uppercase; letter-spacing: 0.12em; }
+    h1 { margin: 18px 0 10px; font-size: 40px; font-weight: 400; }
+    p { margin: 0; font: 16px/1.7 'Segoe UI', sans-serif; color: #7b6a62; }
+    .layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; margin-top: 28px; }
+    .qr-box { display: grid; gap: 16px; justify-items: center; padding: 22px; border-radius: 22px; background: #fcfaf8; border: 1px solid rgba(67, 53, 47, 0.08); }
+    .qr-box img { width: 100%; max-width: 280px; padding: 14px; background: white; border-radius: 18px; border: 1px solid rgba(67, 53, 47, 0.08); }
+    .link-box { padding: 18px; border-radius: 18px; background: #fcfaf8; border: 1px solid rgba(67, 53, 47, 0.08); word-break: break-word; font: 600 14px/1.6 'Segoe UI', sans-serif; }
+    .actions { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+    button { border: 0; border-radius: 999px; padding: 12px 18px; background: linear-gradient(135deg, #dbafb5, #f2cb87); color: #43352f; font: 700 14px 'Segoe UI', sans-serif; cursor: pointer; }
+    @media print { .sheet { padding: 0; } .card { box-shadow: none; border: 0; border-radius: 0; width: 100%; min-height: 100vh; } .actions { display: none; } }
+    @media (max-width: 720px) { .layout { grid-template-columns: 1fr; } .card { padding: 24px; } h1 { font-size: 30px; } }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <article class="card">
+      <span class="eyebrow">Papeterie Vorlage</span>
+      <h1>${escapeHtml(spaceName)}</h1>
+      <p>Privater Link nur fuer eure Gaeste. QR-Code scannen, Bilder direkt im Browser hochladen und den gemeinsamen Event-Feed live ansehen.</p>
+      <div class="layout">
+        <div>
+          <div class="link-box">${escapeHtml(guestUrl)}</div>
+        </div>
+        <div class="qr-box">
+          <img src="${qrCodeDataUrl}" alt="QR-Code fuer den privaten Gastzugang">
+          <strong>Jetzt scannen und hochladen</strong>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" onclick="window.print()">Jetzt drucken</button>
+      </div>
+    </article>
+  </div>
+</body>
+</html>`;
+}
+
+function sanitizeFilename(value, fallback = 'space') {
+  const normalized = normalizeDisplayName(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+
+  return normalized || fallback;
+}
+
+function createManifest(space, photos) {
+  return JSON.stringify({
+    exportedAt: nowIso(),
+    space: {
+      id: space.id,
+      publicId: space.public_id,
+      displayName: space.display_name,
+      ownerEmail: space.owner_email,
+      status: space.status,
+      provisionSource: space.provision_source,
+      createdAt: space.created_at
+    },
+    photos: photos.map(photo => ({
+      id: photo.id,
+      filename: photo.filename,
+      originalName: photo.original_name,
+      comment: photo.comment,
+      uploadedAt: photo.uploaded_at,
+      archivedAt: photo.archived_at,
+      size: photo.size,
+      uploaderSummary: photo.uploader_summary,
+      uploaderIp: photo.uploader_ip
+    }))
+  }, null, 2);
+}
+
+function createZipArchiveStream({ space, photos }) {
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  const { uploadsDir, thumbsDir } = getSpaceDirectories(space.id);
+
+  if (fs.existsSync(uploadsDir)) {
+    archive.directory(uploadsDir, 'originale');
+  }
+  if (fs.existsSync(thumbsDir)) {
+    archive.directory(thumbsDir, 'vorschaubilder');
+  }
+
+  archive.append(createManifest(space, photos), { name: 'manifest.json' });
+  return archive;
+}
+
+async function writeZipArchiveToFile({ space, photos, outputPath }) {
+  await fsp.mkdir(path.dirname(outputPath), { recursive: true });
+
+  await new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(outputPath);
+    const archive = createZipArchiveStream({ space, photos });
+
+    output.on('close', resolve);
+    output.on('error', reject);
+    archive.on('error', reject);
+    archive.pipe(output);
+    const finalized = archive.finalize();
+    if (finalized && typeof finalized.then === 'function') {
+      finalized.catch(reject);
+    }
+  });
+
+  return outputPath;
+}
+
+async function syncExportArchive(outputPath, remotePath) {
+  await new Promise((resolve, reject) => {
+    execFile('rclone', ['copyto', outputPath, `${EXPORT_SYNC_REMOTE}:${remotePath}`], error => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
 }
 
 function getSpaceDirectories(spaceId) {
@@ -252,48 +286,6 @@ function getPhotoFilePath(spaceId, filename) {
 
 function getThumbFilePath(spaceId, filename) {
   return path.join(getSpaceDirectories(spaceId).thumbsDir, `${filename}.webp`);
-}
-
-function getUploaderMetadata(value, req) {
-  let parsed = {};
-
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      parsed = {};
-    }
-  }
-
-  const browser = typeof parsed.browser === 'string' ? parsed.browser.trim().slice(0, 80) : '';
-  const osName = typeof parsed.os === 'string' ? parsed.os.trim().slice(0, 80) : '';
-  const device = typeof parsed.device === 'string' ? parsed.device.trim().slice(0, 80) : '';
-  const language = typeof parsed.language === 'string' ? parsed.language.trim().slice(0, 32) : '';
-  const timezone = typeof parsed.timezone === 'string' ? parsed.timezone.trim().slice(0, 64) : '';
-  const platform = typeof parsed.platform === 'string' ? parsed.platform.trim().slice(0, 64) : '';
-  const vendor = typeof parsed.vendor === 'string' ? parsed.vendor.trim().slice(0, 64) : '';
-  const screen = typeof parsed.screen === 'string' ? parsed.screen.trim().slice(0, 32) : '';
-  const userAgent = (req.get('User-Agent') || '').slice(0, 400);
-  const ip = String(req.ip || req.socket?.remoteAddress || '').slice(0, 80);
-
-  const summaryParts = [device, browser, osName].filter(Boolean);
-  const summary = summaryParts.join(' · ').slice(0, 160);
-
-  return {
-    summary,
-    info: JSON.stringify({
-      browser,
-      os: osName,
-      device,
-      language,
-      timezone,
-      platform,
-      vendor,
-      screen,
-      userAgent
-    }),
-    ip
-  };
 }
 
 async function ensureThumb(spaceId, filename) {
@@ -335,6 +327,11 @@ function deletePhotoFiles(photo) {
 ensureDirectory(DATA_DIR);
 ensureDirectory(STORAGE_DIR);
 ensureDirectory(SPACES_DIR);
+ensureDirectory(EXPORTS_DIR);
+assertWritableDirectory(DATA_DIR);
+assertWritableDirectory(STORAGE_DIR);
+assertWritableDirectory(SPACES_DIR);
+assertWritableDirectory(EXPORTS_DIR);
 
 const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA foreign_keys = ON;');
@@ -461,6 +458,12 @@ const stmtListAdminArchivedPhotos = db.prepare(`
   WHERE space_id = ? AND archived_at IS NOT NULL
   ORDER BY archived_at DESC, uploaded_at DESC
 `);
+const stmtListAllPhotosForExport = db.prepare(`
+  SELECT id, filename, original_name, comment, uploaded_at, archived_at, size, uploader_summary, uploader_ip
+  FROM photos
+  WHERE space_id = ?
+  ORDER BY uploaded_at DESC
+`);
 const stmtGetPhotoByIdAndSpace = db.prepare('SELECT * FROM photos WHERE id = ? AND space_id = ?');
 const stmtDeletePhotoByIdAndSpace = db.prepare('DELETE FROM photos WHERE id = ? AND space_id = ?');
 const stmtArchivePhotoByIdAndSpace = db.prepare('UPDATE photos SET archived_at = CURRENT_TIMESTAMP WHERE id = ? AND space_id = ? AND archived_at IS NULL');
@@ -510,14 +513,14 @@ function buildSpaceSummary(space) {
   };
 }
 
-function createSpaceRecord({ displayName, ownerEmail, provisionSource = 'operator' }) {
+function createSpaceRecord({ displayName, ownerEmail, provisionSource = 'operator', adminPassword }) {
   let publicId = randomPublicId();
   while (stmtGetSpaceByPublicId.get(publicId)) {
     publicId = randomPublicId();
   }
 
-  const guestToken = randomToken(24);
-  const adminPassword = randomPassword(14);
+  const guestToken = randomToken(12);
+  const resolvedAdminPassword = adminPassword || randomPassword(14);
   const spaceId = uuidv4();
 
   stmtCreateSpace.run({
@@ -527,7 +530,7 @@ function createSpaceRecord({ displayName, ownerEmail, provisionSource = 'operato
     owner_email: ownerEmail,
     status: SPACE_STATUS_ACTIVE,
     guest_token_hash: hashValue(guestToken),
-    admin_password_hash: hashValue(adminPassword),
+    admin_password_hash: hashValue(resolvedAdminPassword),
     provision_source: provisionSource,
     paid_at: null
   });
@@ -538,7 +541,7 @@ function createSpaceRecord({ displayName, ownerEmail, provisionSource = 'operato
     id: spaceId,
     publicId,
     guestToken,
-    adminPassword
+    adminPassword: resolvedAdminPassword
   };
 }
 
@@ -571,56 +574,56 @@ const upload = multer(uploadOptions);
 
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: rateLimits.upload,
   message: { error: 'Zu viele Uploads. Bitte warte einen Moment.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 const deleteLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: rateLimits.delete,
   message: { error: 'Zu viele Anfragen. Bitte warte einen Moment.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 80,
+  max: rateLimits.admin,
   message: { error: 'Zu viele Admin-Anfragen. Bitte kurz warten.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 const adminLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: rateLimits.adminLogin,
   message: { error: 'Zu viele Login-Versuche. Bitte kurz warten.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 const operatorLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: rateLimits.operatorLogin,
   message: { error: 'Zu viele Operator-Login-Versuche. Bitte kurz warten.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 const operatorMutationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: rateLimits.operatorMutation,
   message: { error: 'Zu viele Änderungen. Bitte kurz warten.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 const fileLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 240,
+  max: rateLimits.file,
   message: 'Too many requests',
   standardHeaders: true,
   legacyHeaders: false
 });
 const guestRouteLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: rateLimits.guestRoute,
   message: { error: 'Zu viele Anfragen auf diesen Space. Bitte kurz warten.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -630,6 +633,48 @@ const app = express();
 app.set('trust proxy', TRUST_PROXY);
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR, { index: false }));
+
+function getReadinessReport() {
+  const checks = {
+    database: { ok: false, path: DB_PATH },
+    dataDir: { ok: false, path: DATA_DIR },
+    storageDir: { ok: false, path: STORAGE_DIR },
+    spacesDir: { ok: false, path: SPACES_DIR }
+  };
+
+  try {
+    db.prepare('SELECT 1 AS ok').get();
+    checks.database.ok = true;
+  } catch (error) {
+    checks.database.error = error.message;
+  }
+
+  for (const entry of [checks.dataDir, checks.storageDir, checks.spacesDir]) {
+    try {
+      assertWritableDirectory(entry.path);
+      entry.ok = true;
+    } catch (error) {
+      entry.error = error.message;
+    }
+  }
+
+  return {
+    ok: Object.values(checks).every(entry => entry.ok),
+    uptimeSeconds: Math.round(process.uptime()),
+    uploadLimitMb: MAX_FILE_MB,
+    uploadRequestTimeoutMs: UPLOAD_REQUEST_TIMEOUT_MS,
+    checks
+  };
+}
+
+app.get('/api/health/live', (_req, res) => {
+  res.json({ ok: true, uptimeSeconds: Math.round(process.uptime()) });
+});
+
+app.get('/api/health', (_req, res) => {
+  const report = getReadinessReport();
+  res.status(report.ok ? 200 : 503).json(report);
+});
 
 app.get('/theme-background.png', (_req, res) => {
   res.sendFile(THEME_BACKGROUND_PATH);
@@ -711,6 +756,16 @@ function listSpacePhotos(spaceId, scope) {
 
 app.get('/', (_req, res) => {
   res.type('html').sendFile(INDEX_PATH);
+});
+
+app.get('/demo', (_req, res) => {
+  const createdSpace = createSpaceRecord({
+    displayName: DEMO_SPACE_NAME,
+    ownerEmail: DEMO_OWNER_EMAIL,
+    provisionSource: 'demo'
+  });
+
+  res.redirect(302, getSpacePath(createdSpace.publicId, createdSpace.guestToken));
 });
 
 app.get('/operator', (_req, res) => {
@@ -821,19 +876,24 @@ app.get('/api/operator/spaces/:spaceId/uploads/:filename', requireOperator, file
 app.post('/api/spaces', operatorMutationLimiter, async (req, res, next) => {
   const displayName = normalizeDisplayName(req.body?.displayName);
   const ownerEmail = normalizeEmail(req.body?.ownerEmail);
+  const adminPassword = String(req.body?.adminPassword || '');
 
   if (displayName.length < 3) {
     return res.status(400).json({ error: 'Bitte gib einen aussagekräftigen Namen für euren Space an.' });
   }
-  if (!EMAIL_PATTERN.test(ownerEmail)) {
+  if (!isValidEmail(ownerEmail)) {
     return res.status(400).json({ error: 'Bitte gib eine gültige E-Mail-Adresse an.' });
+  }
+  if (!isValidAdminPassword(adminPassword)) {
+    return res.status(400).json({ error: 'Bitte vergib ein Passwort mit mindestens 8 Zeichen für euren Brautpaar-Bereich.' });
   }
 
   try {
     const createdSpace = createSpaceRecord({
       displayName,
       ownerEmail,
-      provisionSource: 'self-serve'
+      provisionSource: 'self-serve',
+      adminPassword
     });
 
     res.status(201).json({
@@ -854,19 +914,24 @@ app.post('/api/operator/spaces', requireOperator, operatorMutationLimiter, async
 
   const displayName = normalizeDisplayName(req.body?.displayName);
   const ownerEmail = normalizeEmail(req.body?.ownerEmail);
+  const adminPassword = String(req.body?.adminPassword || '');
 
   if (displayName.length < 3) {
     return res.status(400).json({ error: 'Bitte gib einen aussagekräftigen Space-Namen an.' });
   }
-  if (!EMAIL_PATTERN.test(ownerEmail)) {
+  if (!isValidEmail(ownerEmail)) {
     return res.status(400).json({ error: 'Bitte gib eine gültige E-Mail-Adresse an.' });
+  }
+  if (!isValidAdminPassword(adminPassword)) {
+    return res.status(400).json({ error: 'Bitte vergib ein Passwort mit mindestens 8 Zeichen für den Brautpaar-Bereich.' });
   }
 
   try {
     const createdSpace = createSpaceRecord({
       displayName,
       ownerEmail,
-      provisionSource: 'operator'
+      provisionSource: 'operator',
+      adminPassword
     });
 
     const storedSpace = stmtGetSpaceById.get(createdSpace.id);
@@ -903,7 +968,7 @@ app.post('/api/operator/spaces/:spaceId/rotate-guest-link', requireOperator, ope
   const space = stmtGetSpaceById.get(req.params.spaceId);
   if (!space) return res.status(404).json({ error: 'Space nicht gefunden.' });
 
-  const guestToken = randomToken(24);
+  const guestToken = randomToken(12);
   stmtUpdateGuestTokenHash.run(hashValue(guestToken), space.id);
 
   try {
@@ -936,7 +1001,7 @@ guestRouter.use(resolveGuestSpace);
 guestRouter.get('/', (req, res) => {
   res.type('html').send(renderTemplate(SPACE_PAGE_PATH, {
     SPACE_NAME: escapeHtml(req.space.display_name),
-    UPLOAD_LIMIT_LABEL: escapeHtml(getUploadLimitLabel()),
+    UPLOAD_LIMIT_LABEL: escapeHtml(getUploadLimitLabel(MAX_FILE_MB)),
     MAX_COMMENT_LENGTH: MAX_COMMENT_LENGTH
   }));
 });
@@ -947,11 +1012,16 @@ guestRouter.get('/api/config', (req, res) => {
     space: {
       displayName: req.space.display_name,
       publicId: req.space.public_id,
-      status: req.space.status
+      status: req.space.status,
+      provisionSource: req.space.provision_source
     },
-    uploadLimitLabel: getUploadLimitLabel(),
+    uploadLimitLabel: getUploadLimitLabel(MAX_FILE_MB),
     maxFileMb: MAX_FILE_MB,
-    maxCommentLength: MAX_COMMENT_LENGTH
+    maxCommentLength: MAX_COMMENT_LENGTH,
+    uploadRequestTimeoutMs: UPLOAD_REQUEST_TIMEOUT_MS,
+    exportSyncEnabled: EXPORT_SYNC_ENABLED,
+    exportSyncLabel: EXPORT_SYNC_LABEL,
+    demoMode: req.space.provision_source === 'demo'
   });
 });
 
@@ -1000,7 +1070,7 @@ guestRouter.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   res.setHeader('Set-Cookie', serializeCookie('space_admin_session', rawToken, {
     httpOnly: true,
     sameSite: 'Lax',
-    path: getSpaceAdminCookiePath(req.space.public_id, req.guestToken),
+    path: getCurrentSpaceAdminCookiePath(req),
     maxAge: Math.floor(SESSION_TTL_MS / 1000),
     secure: req.secure
   }));
@@ -1019,7 +1089,7 @@ guestRouter.post('/api/admin/logout', (req, res) => {
   res.setHeader('Set-Cookie', serializeCookie('space_admin_session', '', {
     httpOnly: true,
     sameSite: 'Lax',
-    path: getSpaceAdminCookiePath(req.space.public_id, req.guestToken),
+    path: getCurrentSpaceAdminCookiePath(req),
     maxAge: 0,
     secure: req.secure
   }));
@@ -1031,6 +1101,79 @@ guestRouter.get('/api/admin/photos', adminLimiter, requireSpaceAdmin, (req, res)
   setNoIndex(res);
   const scope = req.query.scope === 'archived' ? 'archived' : 'active';
   res.json(listSpacePhotos(req.space.id, scope));
+});
+
+guestRouter.get('/api/admin/guest-access', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+  setNoIndex(res);
+
+  try {
+    res.json(await buildSpaceAccessPayload(req));
+  } catch (error) {
+    next(error);
+  }
+});
+
+guestRouter.get('/api/admin/qr-print', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+  setNoIndex(res);
+
+  try {
+    const payload = await buildSpaceAccessPayload(req);
+    res.type('html').send(createPrintableQrHtml({
+      spaceName: req.space.display_name,
+      guestUrl: payload.guestUrl,
+      qrCodeDataUrl: payload.qrCodeDataUrl
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+guestRouter.get('/api/admin/export.zip', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+  setNoIndex(res);
+
+  try {
+    const photos = stmtListAllPhotosForExport.all(req.space.id);
+    const exportName = `${sanitizeFilename(req.space.display_name)}-${req.space.public_id}.zip`;
+    const archive = createZipArchiveStream({ space: req.space, photos });
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${exportName}"`);
+    archive.on('error', next);
+    archive.pipe(res);
+    const finalized = archive.finalize();
+    if (finalized && typeof finalized.then === 'function') {
+      finalized.catch(next);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+guestRouter.post('/api/admin/export-sync', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+  setNoIndex(res);
+
+  if (!EXPORT_SYNC_ENABLED) {
+    return res.status(503).json({ error: 'Cloud-Sync ist auf diesem Server noch nicht konfiguriert.' });
+  }
+
+  try {
+    const photos = stmtListAllPhotosForExport.all(req.space.id);
+    const exportName = `${sanitizeFilename(req.space.display_name)}-${req.space.public_id}-${Date.now()}.zip`;
+    const outputPath = path.join(EXPORTS_DIR, exportName);
+    const remotePath = [EXPORT_SYNC_PREFIX, sanitizeFilename(req.space.display_name), exportName].filter(Boolean).join('/');
+
+    await writeZipArchiveToFile({ space: req.space, photos, outputPath });
+    await syncExportArchive(outputPath, remotePath);
+
+    res.json({
+      success: true,
+      exportName,
+      syncLabel: EXPORT_SYNC_LABEL,
+      remotePath: `${EXPORT_SYNC_REMOTE}:${remotePath}`
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 guestRouter.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) => {
@@ -1176,6 +1319,7 @@ guestRouter.get('/uploads/:filename', fileLimiter, async (req, res) => {
   res.sendFile(filePath);
 });
 
+app.use('/p/:publicId/:guestToken', guestRouter);
 app.use('/g/:publicId/:guestToken', guestRouter);
 
 app.use((err, _req, res, _next) => {
@@ -1192,7 +1336,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: err.message || 'Serverfehler' });
 });
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`Mehrspace-Galerie läuft auf http://localhost:${PORT}`);
   console.log(`Datenbank: ${DB_PATH}`);
   if (HOST === '0.0.0.0') {
@@ -1210,3 +1354,29 @@ app.listen(PORT, HOST, () => {
     console.log('Operator-Backoffice ist deaktiviert, bis OPERATOR_PASSWORD gesetzt ist.');
   }
 });
+
+let shuttingDown = false;
+
+function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Beende Server nach ${signal} ...`);
+
+  server.close(() => {
+    try {
+      db.close();
+    } catch (error) {
+      console.error('Fehler beim Schliessen der Datenbank:', error.message);
+      process.exitCode = 1;
+    }
+    process.exit();
+  });
+
+  setTimeout(() => {
+    console.error('Server konnte nicht rechtzeitig beendet werden. Erzwinge Exit.');
+    process.exit(1);
+  }, 10000).unref();
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

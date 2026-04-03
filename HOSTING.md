@@ -144,12 +144,15 @@ Admin-Passwort am besten mit `.env`-Datei setzen (damit es nicht in Shell-Histor
 ```bash
 cat > /var/www/hochzeit/.env << 'EOF'
 PORT=3000
-ADMIN_PASSWORD=mein-geheimes-passwort-hier
+OPERATOR_PASSWORD=mein-geheimes-passwort-hier
+UPLOAD_REQUEST_TIMEOUT_MS=0
+EXPORT_SYNC_LABEL=Google Drive
 EOF
 ```
 
 Hinweis:
-Aktuell ist in diesem Projekt das Admin-Passwort direkt in [server.js](server.js) fest hinterlegt. Wenn du fuer Hosting wieder auf `.env` umstellen willst, sollte das vor Livegang noch zurueckgebaut werden.
+Das Betreiber-Passwort wird bereits aus `OPERATOR_PASSWORD` gelesen. Fuer unbegrenzte Original-Uploads `MAX_FILE_MB` einfach nicht setzen.
+Das Brautpaar setzt sein eigenes Passwort bereits beim Anlegen des Spaces direkt selbst.
 
 Dann `server.js` so starten:
 ```bash
@@ -173,7 +176,7 @@ server {
     server_name eure-hochzeit.de www.eure-hochzeit.de;
     # Oder: server_name <deine-ip>;
 
-    client_max_body_size 200M;   # max. Upload-Größe
+    client_max_body_size 0;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -182,7 +185,10 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
-        proxy_read_timeout 300s;
+        proxy_request_buffering off;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 900s;
+        proxy_read_timeout 900s;
     }
 }
 ```
@@ -221,6 +227,28 @@ rclone config  # Schritt für Schritt folgen (S3-kompatibel, Hetzner Storage Box
 Einfacherer Weg: Automatisches Hetzner-Server-Backup aktivieren (€0,80/Monat extra):
 → Hetzner Cloud Panel → Server → Backups → aktivieren ✓
 
+Zusätzlich fuer App-Daten und Bilder im 10-Minuten-Rhythmus:
+
+```bash
+cd /var/www/hochzeit
+sudo bash ops/install-backup-timer.sh
+sudo nano /etc/default/wedding-camera-roll-backup
+sudo systemctl start wedding-camera-roll-backup.service
+sudo systemctl status wedding-camera-roll-backup.timer
+```
+
+In `/etc/default/wedding-camera-roll-backup` trägst du dein rclone-Remote ein, z. B. `hetzner-s3:hochzeit-backups` oder auch `gdrive:hochzeit-backups`.
+
+Wenn du den optionalen ZIP-Sync aus dem Brautpaar-Bereich direkt zu Google Drive anbieten willst, konfiguriere denselben rclone-Remote zusätzlich in der App-Umgebung:
+
+```bash
+cat >> /var/www/hochzeit/.env << 'EOF'
+RCLONE_REMOTE=gdrive:hochzeit-backups
+RCLONE_EXPORT_PREFIX=wedding-camera-roll
+EXPORT_SYNC_LABEL=Google Drive
+EOF
+```
+
 ---
 
 ## Option B: Railway.app (noch einfacher, aber teurer) 🚂
@@ -253,12 +281,43 @@ Einfacherer Weg: Automatisches Hetzner-Server-Backup aktivieren (€0,80/Monat e
 ## Checkliste vor der Hochzeit ✅
 
 - [ ] Server läuft: `pm2 status` zeigt `online`
+- [ ] `curl https://eure-hochzeit.de/api/health` liefert HTTP 200
 - [ ] Website aufgerufen und ein Testfoto hochgeladen
+- [ ] Test mit einem grossen Originalbild vom Handy erfolgreich
 - [ ] Testfoto wieder gelöscht
 - [ ] HTTPS funktioniert (🔒 im Browser)
 - [ ] Backup aktiviert
+- [ ] Mindestens 3x so viel freier Speicher wie die erwartete Bildmenge vorhanden
+- [ ] Venue-WLAN und Mobilfunk-Hotspot vorab getestet
 - [ ] URL an Gäste kommuniziert (z. B. QR-Code auf Tisch)
-- [ ] `MAX_FILE_MB=100` gesetzt (oder nach Bedarf anpassen)
+- [ ] `MAX_FILE_MB` bewusst gesetzt oder bewusst weggelassen
+
+---
+
+## Hohe Verfuegbarkeit waehrend der Hochzeit
+
+Wenn die App waehrend einer Hochzeit nicht ausfallen soll, reicht "irgendwo deployen" nicht. Diese Punkte sind die sinnvolle Mindestabsicherung:
+
+1. Ein echter VPS mit persistentem Storage, nicht ein Free-Tier-Host mit Sleep-Modus.
+2. `pm2` oder `systemd` fuer automatischen Neustart bei Crash oder Reboot.
+3. Nginx mit `client_max_body_size 0`, `proxy_request_buffering off` und langen Timeouts fuer grosse Originaldateien.
+4. Health-Checks auf `/api/health/live` und `/api/health` in Uptime Kuma, Hetzner Monitoring oder einem aehnlichen Monitor eintragen.
+5. Backups aktivieren: Hetzner Cloud Backups plus zusaetzlich Storage-Backup fuer `data/` und `storage/`.
+6. Vor dem Event einen realen Lasttest machen: mehrere Handys gleichzeitig, gleiche Location, echte Dateigroessen.
+7. Einen Notfallplan bereithalten: zweites Netzteil, Powerbank, zweites Admin-Geraet und notfalls Hotspot statt Venue-WLAN.
+
+Lasttest direkt aus dem Repo:
+
+```bash
+cd /var/www/hochzeit
+npm run loadtest -- --baseUrl https://eure-hochzeit.de --uploads 60 --concurrency 12
+```
+
+Fuer einen vorsichtigen Vorabtest reicht auch:
+
+```bash
+npm run loadtest -- --baseUrl https://eure-hochzeit.de --uploads 10 --concurrency 3 --width 1600 --height 1200
+```
 
 ---
 
@@ -284,7 +343,7 @@ Ja! Die App identifiziert Geräte über eine eindeutige ID im Browser. Kein Kont
 Die Geräte-ID geht verloren. Der Gast kann seine alten Fotos nicht mehr löschen, aber neue hochladen. Du als Admin (mit `ADMIN_PASSWORD`) kannst alle oder ausgewählte Fotos löschen.
 
 **Wie groß darf das Upload-Limit sein?**
-Standardmäßig 100 MB pro Bild. Kann mit `MAX_FILE_MB=200` angepasst werden.
+Wenn `MAX_FILE_MB` nicht gesetzt ist, gibt es serverseitig kein Upload-Limit. Mit `MAX_FILE_MB=200` kannst du bewusst wieder begrenzen.
 
 **Kann ich alle Fotos als ZIP herunterladen?**
 Ja, direkt vom Server: `zip -r fotos.zip /var/www/hochzeit/uploads/`
