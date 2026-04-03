@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Operator Backoffice</title>
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero">
+      <div class="hero-panel">
+        <div class="hero-content stack">
+          <span class="eyebrow">Betreiber-Backoffice</span>
+          <h1>Alle Spaces sehen. Systemweit eingreifen.</h1>
+          <p>Dieses Backoffice ist bewusst von den einzelnen Event-Spaces getrennt. Hier legst du neue Räume an, verwaltest Status und Zugangsdaten und prüfst Inhalte, ohne in den Gastbereich selbst einzugreifen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="operator-login-view" class="section grid-2">
+      <article class="panel stack">
+        <h2>Operator anmelden</h2>
+        <div class="field">
+          <label for="operator-password">Operator-Passwort</label>
+          <input id="operator-password" type="password" placeholder="Wird über OPERATOR_PASSWORD gesetzt" />
+        </div>
+        <div class="action-row">
+          <button id="operator-login-button" class="primary" type="button">Anmelden</button>
+        </div>
+        <p id="operator-login-status" class="status muted"></p>
+      </article>
+      <article class="panel stack">
+        <span class="eyebrow">Wichtig</span>
+        <h2>Was du hier direkt erledigen kannst</h2>
+        <p class="muted">Spaces anlegen, Überblick behalten, Zugriff bei Bedarf sperren oder freigeben, Gastlinks neu ausgeben und Admin-Passwörter zurücksetzen. Damit ist die operative Basis schon vollständig testbar.</p>
+      </article>
+    </section>
+
+    <section id="operator-app-view" class="section stack hidden">
+      <div class="action-row">
+        <button id="operator-logout-button" class="ghost" type="button">Abmelden</button>
+      </div>
+
+      <div class="operator-grid">
+        <article class="panel stack">
+          <span class="eyebrow">Neuen Space anlegen</span>
+          <h2>Neuen Event vorbereiten</h2>
+          <div class="field">
+            <label for="space-display-name">Space-Name</label>
+            <input id="space-display-name" type="text" placeholder="z. B. Hochzeit Anna & Jonas" />
+          </div>
+          <div class="field">
+            <label for="space-owner-email">Eigentümer-E-Mail</label>
+            <input id="space-owner-email" type="email" placeholder="brautpaar@example.com" />
+          </div>
+          <div class="action-row">
+            <button id="create-space-button" class="primary" type="button">Space anlegen</button>
+          </div>
+          <p id="create-space-status" class="status muted"></p>
+          <div id="secret-result" class="secret-box hidden"></div>
+        </article>
+
+        <article class="panel stack">
+          <span class="eyebrow">Space-Details</span>
+          <h2 id="inspect-space-title">Noch kein Space ausgewählt</h2>
+          <p class="muted">Wähle unten einen Space aus, um die aktuelle Galerie oder das Archiv direkt einzusehen und Auffälligkeiten schnell zu prüfen.</p>
+          <div class="action-row">
+            <button id="inspect-active-button" class="secondary" type="button">Aktive Fotos</button>
+            <button id="inspect-archived-button" class="secondary" type="button">Archiv</button>
+          </div>
+          <p id="inspect-status" class="status muted"></p>
+          <div id="inspect-gallery" class="gallery-grid"></div>
+        </article>
+      </div>
+
+      <article class="table-panel">
+        <div class="space-topbar">
+          <div>
+            <span class="eyebrow">Systemübersicht</span>
+            <h2>Alle Spaces</h2>
+          </div>
+        </div>
+        <div style="overflow:auto;">
+          <table class="operator-table">
+            <thead>
+              <tr>
+                <th>Space</th>
+                <th>Status</th>
+                <th>Bilder</th>
+                <th>Speicher</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="spaces-table-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const loginView = document.getElementById('operator-login-view');
+    const appView = document.getElementById('operator-app-view');
+    const loginStatus = document.getElementById('operator-login-status');
+    const createSpaceStatus = document.getElementById('create-space-status');
+    const inspectStatus = document.getElementById('inspect-status');
+    const spacesTableBody = document.getElementById('spaces-table-body');
+    const secretResult = document.getElementById('secret-result');
+    const inspectGallery = document.getElementById('inspect-gallery');
+    const inspectSpaceTitle = document.getElementById('inspect-space-title');
+
+    let selectedSpaceId = null;
+    let inspectScope = 'active';
+
+    function setStatus(element, message, kind = 'muted') {
+      element.textContent = message;
+      element.className = `status ${kind}`;
+    }
+
+    function formatBytes(bytes) {
+      const value = Number(bytes || 0);
+      if (!value) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let unitIndex = 0;
+      let current = value;
+      while (current >= 1024 && unitIndex < units.length - 1) {
+        current /= 1024;
+        unitIndex += 1;
+      }
+      return `${current.toFixed(current >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      return new Intl.DateTimeFormat('de-DE', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(new Date(value));
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderSecretBox(title, lines, options = {}) {
+      secretResult.classList.remove('hidden');
+      const qrMarkup = options.qrCodeDataUrl
+        ? `<div class="secret-qr-box"><img class="qr-preview-image" src="${options.qrCodeDataUrl}" alt="QR-Code fuer den Gastlink"><a class="quiet-link" href="${options.qrCodeDataUrl}" download="space-qr.png">QR-Code speichern</a></div>`
+        : '';
+      secretResult.innerHTML = `<div class="secret-box-content"><div><strong>${title}</strong><br>${lines.join('<br>')}</div>${qrMarkup}</div>`;
+    }
+
+    function confirmDangerousAction(message) {
+      return window.confirm(message);
+    }
+
+    async function ensureSession() {
+      const response = await fetch('/api/operator/session', { credentials: 'same-origin' });
+      const loggedIn = response.ok;
+      loginView.classList.toggle('hidden', loggedIn);
+      appView.classList.toggle('hidden', !loggedIn);
+      if (loggedIn) {
+        await loadSpaces();
+      }
+      return loggedIn;
+    }
+
+    async function login() {
+      const password = document.getElementById('operator-password').value;
+      const response = await fetch('/api/operator/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(loginStatus, payload.error || 'Anmeldung fehlgeschlagen.', 'error');
+        return;
+      }
+      document.getElementById('operator-password').value = '';
+      setStatus(loginStatus, 'Operator angemeldet.', 'success');
+      await ensureSession();
+    }
+
+    async function logout() {
+      await fetch('/api/operator/logout', {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
+      loginView.classList.remove('hidden');
+      appView.classList.add('hidden');
+      selectedSpaceId = null;
+      spacesTableBody.innerHTML = '';
+    }
+
+    async function loadSpaces() {
+      const response = await fetch('/api/operator/spaces', { credentials: 'same-origin' });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(loginStatus, payload.error || 'Spaces konnten nicht geladen werden.', 'error');
+        return;
+      }
+
+      spacesTableBody.innerHTML = '';
+      for (const space of payload.spaces) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            <strong>${space.displayName}</strong><br>
+            <span class="muted">${space.ownerEmail}</span><br>
+            <span class="muted">Public ID: ${space.publicId}</span><br>
+            <span class="muted">Erstellt: ${formatDate(space.createdAt)}</span>
+          </td>
+          <td>${space.status}</td>
+          <td>${space.activePhotoCount} aktiv · ${space.archivedPhotoCount} archiviert</td>
+          <td>${formatBytes(space.storageUsageBytes)}</td>
+          <td></td>
+        `;
+
+        const actionsCell = row.lastElementChild;
+
+        const inspectButton = document.createElement('button');
+        inspectButton.type = 'button';
+        inspectButton.className = 'secondary';
+        inspectButton.textContent = 'Einsehen';
+        inspectButton.addEventListener('click', async () => {
+          selectedSpaceId = space.id;
+          inspectSpaceTitle.textContent = space.displayName;
+          await loadSpacePhotos();
+        });
+
+        const statusButton = document.createElement('button');
+        statusButton.type = 'button';
+        statusButton.className = 'ghost';
+        statusButton.textContent = space.status === 'suspended' ? 'Freischalten' : 'Sperren';
+        statusButton.addEventListener('click', async () => {
+          await updateSpaceStatus(space.id, space.status === 'suspended' ? 'active' : 'suspended');
+        });
+
+        const rotateButton = document.createElement('button');
+        rotateButton.type = 'button';
+        rotateButton.className = 'ghost';
+        rotateButton.textContent = 'Gastlink rotieren';
+        rotateButton.addEventListener('click', async () => {
+          if (!confirmDangerousAction(`Gastlink fuer "${space.displayName}" wirklich rotieren? Der bisherige Link und bestehende QR-Codes verlieren sofort ihre Gueltigkeit.`)) {
+            return;
+          }
+          const payload = await operatorPost(`/api/operator/spaces/${encodeURIComponent(space.id)}/rotate-guest-link`);
+          if (payload) {
+            renderSecretBox('Neuer Gastlink', [`<a href="${payload.guestUrl}" target="_blank" rel="noreferrer">${payload.guestUrl}</a>`], {
+              qrCodeDataUrl: payload.qrCodeDataUrl
+            });
+            setStatus(createSpaceStatus, 'Gastlink erfolgreich rotiert.', 'success');
+          }
+        });
+
+        const resetAdminButton = document.createElement('button');
+        resetAdminButton.type = 'button';
+        resetAdminButton.className = 'ghost';
+        resetAdminButton.textContent = 'Admin-Passwort neu';
+        resetAdminButton.addEventListener('click', async () => {
+          if (!confirmDangerousAction(`Admin-Passwort fuer "${space.displayName}" wirklich neu setzen? Bestehende Angaben des Brautpaars werden dadurch sofort ungueltig.`)) {
+            return;
+          }
+          const payload = await operatorPost(`/api/operator/spaces/${encodeURIComponent(space.id)}/reset-admin-password`);
+          if (payload) {
+            renderSecretBox('Neues Admin-Passwort', [`<code>${escapeHtml(payload.adminPassword)}</code>`]);
+            setStatus(createSpaceStatus, 'Admin-Passwort erfolgreich neu gesetzt.', 'success');
+          }
+        });
+
+        actionsCell.append(inspectButton, statusButton, rotateButton, resetAdminButton);
+        spacesTableBody.append(row);
+      }
+    }
+
+    async function operatorPost(url, body = {}) {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(createSpaceStatus, payload.error || 'Aktion fehlgeschlagen.', 'error');
+        return null;
+      }
+      await loadSpaces();
+      return payload;
+    }
+
+    async function createSpace() {
+      setStatus(createSpaceStatus, 'Space wird angelegt…');
+      const payload = await operatorPost('/api/operator/spaces', {
+        displayName: document.getElementById('space-display-name').value,
+        ownerEmail: document.getElementById('space-owner-email').value
+      });
+      if (!payload) return;
+
+      document.getElementById('space-display-name').value = '';
+      document.getElementById('space-owner-email').value = '';
+      setStatus(createSpaceStatus, 'Space erfolgreich angelegt.', 'success');
+      renderSecretBox('Neuer Space', [
+        `Gastlink: <a href="${payload.guestUrl}" target="_blank" rel="noreferrer">${payload.guestUrl}</a>`,
+        `Admin-Passwort: <code>${payload.adminPassword}</code>`
+      ], {
+        qrCodeDataUrl: payload.qrCodeDataUrl
+      });
+    }
+
+    async function updateSpaceStatus(spaceId, status) {
+      const payload = await operatorPost(`/api/operator/spaces/${encodeURIComponent(spaceId)}/status`, { status });
+      if (payload) {
+        setStatus(createSpaceStatus, `Space-Status auf ${payload.status} gesetzt.`, 'success');
+      }
+    }
+
+    async function loadSpacePhotos() {
+      if (!selectedSpaceId) {
+        setStatus(inspectStatus, 'Bitte zuerst einen Space auswählen.', 'error');
+        return;
+      }
+
+      setStatus(inspectStatus, 'Fotos werden geladen…');
+      const response = await fetch(`/api/operator/spaces/${encodeURIComponent(selectedSpaceId)}/photos?scope=${encodeURIComponent(inspectScope)}`, {
+        credentials: 'same-origin'
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(inspectStatus, payload.error || 'Fotos konnten nicht geladen werden.', 'error');
+        return;
+      }
+
+      inspectGallery.innerHTML = '';
+      for (const photo of payload.photos) {
+        const item = document.createElement('article');
+        item.className = 'photo-card';
+        item.innerHTML = `
+          <img src="/api/operator/spaces/${encodeURIComponent(selectedSpaceId)}/uploads/${encodeURIComponent(photo.filename)}?thumb=1" alt="${photo.original_name || 'Foto'}" loading="lazy">
+          <div class="photo-body">
+            <div class="photo-meta">
+              <strong>${photo.original_name || 'Upload'}</strong>
+              <span>${formatDate(photo.uploaded_at)}</span>
+            </div>
+            <div class="photo-comment">${photo.comment || '<span class="muted">Ohne Kommentar</span>'}</div>
+            <div class="muted">${photo.uploader_summary || 'Unbekannt'}${photo.uploader_ip ? ` · ${photo.uploader_ip}` : ''}</div>
+          </div>
+        `;
+        inspectGallery.append(item);
+      }
+
+      if (!payload.photos.length) {
+        inspectGallery.innerHTML = '<div class="card"><p class="muted">Keine Fotos in diesem Bereich.</p></div>';
+      }
+      setStatus(inspectStatus, `${payload.photos.length} Foto(s) geladen.`, 'success');
+    }
+
+    document.getElementById('operator-login-button').addEventListener('click', login);
+    document.getElementById('operator-logout-button').addEventListener('click', logout);
+    document.getElementById('create-space-button').addEventListener('click', createSpace);
+    document.getElementById('inspect-active-button').addEventListener('click', async () => {
+      inspectScope = 'active';
+      await loadSpacePhotos();
+    });
+    document.getElementById('inspect-archived-button').addEventListener('click', async () => {
+      inspectScope = 'archived';
+      await loadSpacePhotos();
+    });
+
+    ensureSession();
+  </script>
+</body>
+</html>

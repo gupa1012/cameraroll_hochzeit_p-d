@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Desirée &amp; Patrick – Unsere Hochzeit 💍</title>
+  <meta name="description" content="Teile deine Fotos und Grußbotschaften für die Hochzeit von Desirée und Patrick!" />
+  <meta name="theme-color" content="#f5e6d3" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- Prevent caching of API responses -->
+  <style>
+    /* ── Reset & Tokens ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:   #fcf7f2;
+      --blush:   #f6e6e6;
+      --rose:    #dbafb5;
+      --gold:    #f2cb87;
+      --dark:    #5d534d;
+      --mid:     #8e7d74;
+      --light:   #e9ddd3;
+      --white:   #ffffff;
+      --paper:   #fffdf9;
+      --surface: rgba(255,255,255,.82);
+      --surface-strong: rgba(255,255,255,.92);
+      --surface-tint: rgba(239,225,219,.72);
+      --border-soft: rgba(202,184,174,.30);
+      --header-start: #f5dde5;
+      --header-mid: #fbf6ef;
+      --header-end: #dde9ef;
+      --accent-soft: #fbf2ec;
+      --secondary: #cdddc6;
+      --secondary-strong: #9ab08d;
+      --pill-bg: #f8ece8;
+      --pill-text: #ae7d85;
+      --overlay-start: rgba(93,83,77,.52);
+      --overlay-soft: rgba(93,83,77,.42);
+      --shadow:  0 18px 42px rgba(93,83,77,.10);
+      --radius:  14px;
+      --font:    'Georgia', 'Times New Roman', serif;
+      --sans:    system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --trans:   .22s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(243, 208, 220, .28), transparent 20%),
+        radial-gradient(circle at 88% 12%, rgba(196, 214, 241, .22), transparent 18%),
+        radial-gradient(circle at 24% 48%, rgba(249, 222, 171, .14), transparent 18%),
+        radial-gradient(circle at 80% 52%, rgba(201, 228, 205, .18), transparent 16%),
+        linear-gradient(180deg, var(--paper) 0%, #fffdf9 42%, var(--cream) 78%, var(--blush) 100%);
+      color: var(--dark);
+      min-height: 100vh;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────────── */
+    header {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.72) 28%, rgba(255,255,255,.86) 58%, rgba(255,249,244,.92) 100%),
+        url('/theme-background.png') center bottom / cover no-repeat;
+      color: var(--dark);
+      text-align: center;
+      padding: 3.5rem 1.5rem 11.5rem;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(186, 167, 153, .18);
+    }
+    header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='rgba(160,140,125,.08)' stroke-width='1'%3E%3Cpath d='M0 26h120M0 56h120M0 86h120'/%3E%3Cpath d='M22 0v120M52 0v120M82 0v120M112 0v120'/%3E%3C/g%3E%3C/svg%3E") repeat;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 230px;
+      background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,.06) 70%, rgba(255,248,242,.55) 100%);
+      opacity: 1;
+      pointer-events: none;
+    }
+    .header-rings {
+      font-size: 2.4rem;
+      margin-bottom: .5rem;
+      display: block;
+      filter: saturate(.8);
+    }
+    header h1 {
+      font-family: var(--font);
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 400;
+      letter-spacing: .04em;
+      line-height: 1.2;
+      margin-bottom: .5rem;
+    }
+    header p {
+      font-size: 1.05rem;
+      opacity: .9;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Upload zone ─────────────────────────────────────────────────────────── */
+    .upload-section {
+      max-width: 640px;
+      margin: 2.5rem auto 0;
+      padding: 0 1rem;
+    }
+    .section-card {
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-soft);
+      border-radius: 22px;
+      padding: 1rem;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .mobile-note {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      margin-top: 1rem;
+      padding: .45rem .85rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.74);
+      box-shadow: 0 10px 24px rgba(94,74,67,.08);
+      font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: .01em;
+    }
+    .theme-switcher {
+      display: none;
+      margin: 1.25rem auto 0;
+      width: min(100%, 640px);
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(214,187,176,.34);
+      border-radius: 24px;
+      padding: .85rem 1rem 1rem;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 18px 34px rgba(68,40,46,.10);
+    }
+    .theme-switcher-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      text-align: left;
+      flex-wrap: wrap;
+    }
+    .theme-switcher-label {
+      display: block;
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      opacity: .72;
+      margin-bottom: .25rem;
+    }
+    .theme-switcher-name {
+      font-family: var(--font);
+      font-size: 1.25rem;
+      line-height: 1.2;
+    }
+    .theme-switcher-copy {
+      margin-top: .2rem;
+      font-size: .9rem;
+      line-height: 1.45;
+      opacity: .82;
+    }
+    .theme-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+    }
+    .theme-btn {
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.9);
+      color: var(--dark);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform var(--trans), background var(--trans);
+      backdrop-filter: blur(6px);
+    }
+    .theme-btn:hover {
+      background: rgba(255,255,255,.98);
+      transform: translateY(-1px);
+    }
+    .theme-palette {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      flex-wrap: wrap;
+      margin-top: .8rem;
+      justify-content: center;
+    }
+    .theme-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.55);
+      box-shadow: 0 2px 10px rgba(58,46,46,.12);
+    }
+    .theme-counter {
+      margin-left: .15rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      opacity: .8;
+    }
+    .drop-zone {
+      border: 2.5px dashed var(--light);
+      border-radius: var(--radius);
+      background: var(--surface-strong);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--trans), background var(--trans), transform var(--trans);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--rose);
+      background: var(--accent-soft);
+      transform: translateY(-2px);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 2.8rem; display: block; margin-bottom: .6rem; }
+    .drop-zone h2 {
+      font-family: var(--font);
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: var(--dark);
+      margin-bottom: .4rem;
+    }
+    .drop-zone p { color: var(--mid); font-size: .9rem; }
+
+    .upload-btn {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      padding: .9rem 1.5rem;
+      background: linear-gradient(135deg, var(--rose), var(--secondary-strong));
+      color: var(--white);
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+      cursor: pointer;
+      transition: opacity var(--trans), transform var(--trans);
+    }
+    .upload-btn:hover { opacity: .92; transform: translateY(-1px); }
+    .upload-btn:active { transform: translateY(0); }
+    .upload-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* Progress bar */
+    .progress-wrap {
+      display: none;
+      margin-top: .8rem;
+      background: var(--light);
+      border-radius: 50px;
+      overflow: hidden;
+      height: 6px;
+    }
+    .progress-wrap.show { display: block; }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--rose), var(--gold));
+      width: 0%;
+      transition: width .2s ease;
+      border-radius: 50px;
+    }
+
+    .status-msg {
+      margin-top: .6rem;
+      font-size: .87rem;
+      text-align: center;
+      min-height: 1.2em;
+      color: var(--mid);
+    }
+    .status-msg.error { color: #c0392b; }
+    .status-msg.success { color: #27ae60; }
+
+    /* Preview strip */
+    .preview-strip {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-top: .8rem;
+      justify-content: center;
+    }
+    .field {
+      margin-top: 1rem;
+    }
+    .field label {
+      display: block;
+      margin-bottom: .45rem;
+      color: var(--dark);
+      font-size: .92rem;
+      font-weight: 600;
+    }
+    .field-help {
+      color: var(--mid);
+      font-size: .8rem;
+      margin-top: .35rem;
+      line-height: 1.4;
+    }
+    .message-input, .admin-password-input {
+      width: 100%;
+      border: 1.5px solid var(--light);
+      border-radius: 16px;
+      padding: .9rem 1rem;
+      font: inherit;
+      color: var(--dark);
+      background: var(--surface-strong);
+      resize: vertical;
+      min-height: 104px;
+      transition: border-color var(--trans), box-shadow var(--trans);
+    }
+    .admin-password-input {
+      min-height: auto;
+      height: 50px;
+    }
+    .message-input:focus, .admin-password-input:focus {
+      outline: none;
+      border-color: var(--rose);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--rose) 18%, transparent);
+    }
+    .button-row {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .preview-thumb {
+      width: 70px; height: 70px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid var(--light);
+    }
+
+    /* ── Gallery ─────────────────────────────────────────────────────────────── */
+    .gallery-section {
+      max-width: 1200px;
+      margin: 3rem auto 0;
+      padding: 0 1rem;
+    }
+    .gallery-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.4rem;
+      flex-wrap: wrap;
+    }
+    .gallery-header h2 {
+      font-family: var(--font);
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--dark);
+    }
+    .photo-count {
+      background: var(--light);
+      color: var(--mid);
+      border-radius: 50px;
+      padding: .15rem .7rem;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+    .refresh-btn {
+      margin-left: auto;
+      background: none;
+      border: 1.5px solid var(--light);
+      color: var(--mid);
+      border-radius: 50px;
+      padding: .3rem .9rem;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: border-color var(--trans), color var(--trans);
+    }
+    .refresh-btn:hover { border-color: var(--rose); color: var(--rose); }
+    .gallery-tabs {
+      display: none;
+      align-items: center;
+      gap: .45rem;
+      padding: .25rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid var(--border-soft);
+    }
+    .gallery-tabs.show {
+      display: inline-flex;
+    }
+    .gallery-tab {
+      border: none;
+      background: transparent;
+      color: var(--mid);
+      padding: .45rem .9rem;
+      border-radius: 999px;
+      font-size: .85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--trans), color var(--trans), transform var(--trans);
+    }
+    .gallery-tab:hover {
+      color: var(--dark);
+      transform: translateY(-1px);
+    }
+    .gallery-tab.active {
+      background: linear-gradient(135deg, var(--rose), var(--secondary-strong));
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(93,83,77,.12);
+    }
+
+    /* Stable grid layout across desktop and iOS Safari */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .8rem;
+      align-items: start;
+    }
+    @media (min-width: 540px)  { .photo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (min-width: 800px)  { .photo-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @media (min-width: 1100px) { .photo-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+    .photo-card {
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      background: var(--light);
+      transition: transform var(--trans), box-shadow var(--trans);
+    }
+    .photo-card:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(58,46,46,.18); }
+    .photo-card img {
+      display: block;
+      width: 100%;
+      height: auto;
+      transition: transform .4s ease;
+    }
+    .photo-card:hover img { transform: scale(1.03); }
+
+    .card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, var(--overlay-start) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity var(--trans);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: .8rem;
+    }
+    .photo-card:hover .card-overlay { opacity: 1; }
+    .card-body {
+      padding: .9rem .95rem 1rem;
+      background: var(--surface-strong);
+    }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: .7rem;
+      align-items: center;
+      margin-bottom: .4rem;
+      font-size: .72rem;
+      color: var(--mid);
+    }
+    .card-title {
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1.35;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card-comment {
+      margin-top: .45rem;
+      color: var(--dark);
+      font-size: .88rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .card-admin-meta {
+      margin-top: .65rem;
+      padding-top: .6rem;
+      border-top: 1px solid var(--border-soft);
+      font-size: .76rem;
+      color: var(--mid);
+      line-height: 1.45;
+    }
+    .card-admin-meta strong {
+      color: var(--dark);
+    }
+    .card-admin-meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .74rem;
+      background: rgba(255,255,255,.72);
+      padding: .08rem .35rem;
+      border-radius: 8px;
+      word-break: break-all;
+    }
+    .comment-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .22rem .55rem;
+      border-radius: 999px;
+      background: var(--pill-bg);
+      color: var(--pill-text);
+      font-weight: 600;
+    }
+    .delete-btn {
+      background: rgba(255,255,255,.92);
+      border: none;
+      border-radius: 50px;
+      padding: .3rem .75rem;
+      font-size: .78rem;
+      color: #c0392b;
+      cursor: pointer;
+      font-weight: 600;
+      display: none;
+      transition: background var(--trans);
+      margin-left: auto;
+    }
+    .select-checkbox {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,.85);
+      background: rgba(255,255,255,.18);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      display: none;
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .select-checkbox:checked {
+      background: var(--rose);
+      border-color: var(--rose);
+    }
+    .select-checkbox:checked::after {
+      content: '✓';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+    .delete-btn:hover { background: #fff; }
+    .photo-card.mine .delete-btn { display: inline-block; }
+    .photo-card.mine .card-overlay { background: linear-gradient(to top, var(--overlay-soft) 0%, transparent 55%); opacity: 0; }
+    .photo-card.mine:hover .card-overlay { opacity: 1; }
+    .admin-mode .card-overlay,
+    .admin-mode.photo-card .card-overlay,
+    .photo-card.admin-mode .card-overlay { opacity: 1; }
+    .admin-mode .select-checkbox,
+    .photo-card.admin-mode .select-checkbox { display: inline-block; }
+    @media (hover: none), (pointer: coarse) {
+      .photo-card.mine .card-overlay,
+      .admin-mode .card-overlay,
+      .admin-mode.photo-card .card-overlay,
+      .photo-card.admin-mode .card-overlay {
+        opacity: 1;
+      }
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--light) 25%, var(--surface-tint) 50%, var(--light) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius);
+      height: 200px;
+      margin-bottom: .8rem;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    .empty-state {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--mid);
+    }
+    .empty-state .empty-icon { font-size: 3rem; display: block; margin-bottom: .8rem; }
+    .empty-state p { font-size: 1rem; }
+
+    /* ── Lightbox ─────────────────────────────────────────────────────────────── */
+    .lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(30,18,20,.88);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .lightbox.open { display: flex; animation: fadeIn .2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .lightbox-inner {
+      position: relative;
+      max-width: min(92vw, 1100px);
+      max-height: 92vh;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 20px 80px rgba(0,0,0,.5);
+    }
+    .lightbox-inner img {
+      display: block;
+      max-width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+    }
+    .lb-caption {
+      background: rgba(35,22,25,.92);
+      color: #fff;
+      padding: .95rem 1rem;
+      line-height: 1.55;
+    }
+    .lb-caption strong {
+      display: block;
+      margin-bottom: .35rem;
+      font-size: .95rem;
+    }
+    .lb-caption p {
+      font-size: .9rem;
+      white-space: pre-wrap;
+      color: rgba(255,255,255,.9);
+    }
+    .lb-close {
+      position: fixed;
+      top: 1.2rem; right: 1.2rem;
+      background: rgba(255,255,255,.18);
+      border: none;
+      border-radius: 50%;
+      width: 44px; height: 44px;
+      font-size: 1.2rem;
+      color: #fff;
+      cursor: pointer;
+      transition: background var(--trans);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .lb-close:hover { background: rgba(255,255,255,.3); }
+
+    /* Nav arrows */
+    .lb-prev, .lb-next {
+      position: fixed;
+      top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,.18);
+      border: none;
+      border-radius: 50%;
+      width: 44px; height: 44px;
+      font-size: 1.1rem;
+      color: #fff;
+      cursor: pointer;
+      transition: background var(--trans);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .lb-prev { left: .8rem; }
+    .lb-next { right: .8rem; }
+    .lb-prev:hover, .lb-next:hover { background: rgba(255,255,255,.3); }
+
+    /* ── Footer ──────────────────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      color: var(--mid);
+      font-size: .82rem;
+      margin-top: 3rem;
+    }
+    footer a { color: var(--rose); text-decoration: none; }
+    .device-id-note {
+      margin-top: .9rem;
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: .45rem;
+      padding: .55rem .85rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.7);
+      border: 1px solid var(--border-soft);
+      color: var(--dark);
+      font-size: .78rem;
+    }
+    .device-id-note strong {
+      font-weight: 700;
+    }
+    .device-id-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      user-select: all;
+      word-break: break-all;
+    }
+
+    /* ── Toast ───────────────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--dark);
+      color: #fff;
+      padding: .7rem 1.4rem;
+      border-radius: 50px;
+      font-size: .9rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,.25);
+      transition: transform .3s cubic-bezier(.22,1,.36,1);
+      z-index: 200;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.green { background: #27ae60; }
+    .toast.red   { background: #c0392b; }
+    .admin-section {
+      max-width: 1200px;
+      margin: 1rem auto 0;
+      padding: 0 1rem;
+    }
+    .admin-card {
+      background: linear-gradient(135deg, color-mix(in srgb, var(--header-start) 72%, #483437), color-mix(in srgb, var(--header-mid) 68%, #5c4044));
+      color: #fff;
+    }
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .admin-header h3 {
+      font-family: var(--font);
+      font-size: 1.15rem;
+      font-weight: 400;
+    }
+    .admin-subtitle {
+      margin-top: .35rem;
+      color: rgba(255,255,255,.76);
+      font-size: .88rem;
+    }
+    .admin-panel {
+      margin-top: 1rem;
+      display: grid;
+      gap: .85rem;
+    }
+    .admin-panel.hidden { display: none; }
+    .admin-status {
+      font-size: .85rem;
+      color: rgba(255,255,255,.76);
+    }
+    .admin-status.ok { color: #c8f5d2; }
+    .admin-actions .upload-btn,
+    .admin-card .upload-btn {
+      margin-top: 0;
+    }
+    .secondary-admin-btn {
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+    }
+    .secondary-admin-btn:hover {
+      opacity: 1;
+      background: rgba(255,255,255,.22);
+    }
+    .admin-card .refresh-btn {
+      color: #fff;
+      border-color: rgba(255,255,255,.35);
+    }
+    .admin-card .refresh-btn:hover { color: #fff; border-color: rgba(255,255,255,.6); }
+    @media (max-width: 640px) {
+      header {
+        padding: 2.6rem 1rem 2.3rem;
+      }
+      .theme-switcher {
+        padding: .8rem .85rem .9rem;
+      }
+      .theme-switcher-head {
+        align-items: flex-start;
+      }
+      .theme-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .section-card, .admin-card {
+        border-radius: 18px;
+        padding: .9rem;
+      }
+      .drop-zone {
+        padding: 1.7rem 1rem;
+      }
+      .gallery-header {
+        gap: .65rem;
+      }
+      .gallery-tabs {
+        width: 100%;
+        justify-content: stretch;
+      }
+      .gallery-tab {
+        flex: 1 1 0;
+      }
+      .refresh-btn, .upload-btn, .delete-btn {
+        min-height: 46px;
+      }
+      .photo-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .65rem;
+      }
+      .button-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Scrollbar ───────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--light); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <span class="header-rings">💍</span>
+  <h1>Desirée &amp; Patrick</h1>
+  <p>Teilt eure schönsten Momente von unserem großen Tag!<br>Alle Fotos landen direkt in unserer gemeinsamen Galerie.</p>
+  <div class="mobile-note">📱 Mobile-optimierte Webapp · direkt im Browser</div>
+  <div class="theme-switcher" aria-label="Farbschema wechseln">
+    <div class="theme-switcher-head">
+      <div>
+        <span class="theme-switcher-label">Farbwelten testen</span>
+        <div class="theme-switcher-name" id="themeName">Wiesenmorgen</div>
+        <p class="theme-switcher-copy" id="themeDescription">Sanft, frisch und romantisch mit warmem Blush und zartem Salbei.</p>
+      </div>
+      <div class="theme-controls">
+        <button class="theme-btn" id="themePrevBtn" type="button" aria-label="Vorheriges Farbschema">‹</button>
+        <button class="theme-btn" id="themeNextBtn" type="button" aria-label="Nächstes Farbschema">›</button>
+        <span class="theme-counter" id="themeCounter">1 / 6</span>
+      </div>
+    </div>
+    <div class="theme-palette" id="themePalette" aria-hidden="true"></div>
+  </div>
+</header>
+
+<!-- ── Upload ── -->
+<section class="upload-section">
+  <div class="section-card">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*" capture="environment" multiple />
+      <span class="drop-icon">📷</span>
+      <h2>Fotos hochladen</h2>
+      <p>Hier tippen oder Bilder reinziehen<br><small id="uploadHint">Smartphone-freundlich · JPEG · PNG · WebP · HEIC — bis __MAX_FILE_MB__ MB je Bild</small></p>
+    </div>
+
+    <div class="preview-strip" id="previewStrip"></div>
+
+    <div class="field">
+      <label for="messageInput">Grußbotschaft / Kommentar</label>
+      <textarea
+        id="messageInput"
+        class="message-input"
+        maxlength="__MAX_COMMENT_LENGTH__"
+        placeholder="z. B. 'Was für ein wunderschöner Tag 💛' oder 'Alles Liebe für euch zwei!'"
+      ></textarea>
+      <div class="field-help" id="messageHelp">Die Nachricht wird zusammen mit den ausgewählten Bildern angezeigt (max. __MAX_COMMENT_LENGTH__ Zeichen).</div>
+    </div>
+
+    <button class="upload-btn" id="uploadBtn" disabled>Fotos mit Nachricht hochladen</button>
+    <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+</section>
+
+<section class="admin-section">
+  <div class="section-card admin-card">
+    <div class="admin-header">
+      <div>
+        <h3>Admin-Bereich</h3>
+        <p class="admin-subtitle">Geschützt per Passwort. Ausgewählte Bilder landen zuerst im Archiv und können dort endgültig gelöscht werden.</p>
+      </div>
+      <button class="refresh-btn" id="adminToggleBtn" type="button">🔐 Freischalten</button>
+    </div>
+    <div class="admin-panel hidden" id="adminPanel">
+      <form id="adminLoginForm">
+        <input type="text" name="username" autocomplete="username" value="admin" hidden />
+        <div class="field">
+          <label for="adminPasswordInput">Admin-Passwort</label>
+          <input id="adminPasswordInput" class="admin-password-input" type="password" placeholder="Passwort eingeben" autocomplete="current-password" />
+        </div>
+        <div class="button-row admin-actions">
+          <button class="upload-btn" id="adminLoginBtn" type="submit">Admin entsperren</button>
+          <button class="refresh-btn" id="adminLogoutBtn" type="button">Sperren</button>
+        </div>
+      </form>
+      <div class="admin-status" id="adminStatus">Noch gesperrt</div>
+      <div class="button-row admin-actions">
+        <button class="upload-btn" id="deleteSelectedBtn" type="button" disabled>Ausgewählte Bilder archivieren</button>
+        <button class="upload-btn secondary-admin-btn" id="restoreSelectedBtn" type="button" disabled hidden>Aus Archiv zur Galerie</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Gallery ── -->
+<section class="gallery-section">
+  <div class="gallery-header">
+    <h2 id="galleryTitle">Galerie</h2>
+    <div class="gallery-tabs" id="galleryTabs" aria-label="Admin-Ansicht umschalten">
+      <button class="gallery-tab active" id="galleryTabActive" type="button">Galerie</button>
+      <button class="gallery-tab" id="galleryTabArchived" type="button">Archiv</button>
+    </div>
+    <span class="photo-count" id="photoCount">…</span>
+    <button class="refresh-btn" id="refreshBtn">↻ Aktualisieren</button>
+  </div>
+  <div class="photo-grid" id="photoGrid">
+    <!-- skeletons while loading -->
+    <div class="skeleton"></div>
+    <div class="skeleton" style="height:160px"></div>
+    <div class="skeleton" style="height:240px"></div>
+    <div class="skeleton" style="height:180px"></div>
+    <div class="skeleton" style="height:220px"></div>
+    <div class="skeleton" style="height:150px"></div>
+  </div>
+</section>
+
+<!-- ── Lightbox ── -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto-Ansicht">
+  <button class="lb-close" id="lbClose" aria-label="Schließen">✕</button>
+  <button class="lb-prev"  id="lbPrev"  aria-label="Vorheriges Foto">‹</button>
+  <button class="lb-next"  id="lbNext"  aria-label="Nächstes Foto">›</button>
+  <div class="lightbox-inner">
+    <img id="lbImg" src="" alt="Foto in voller Auflösung" />
+    <div class="lb-caption" id="lbCaption" hidden>
+      <strong id="lbCaptionTitle"></strong>
+      <p id="lbCaptionText"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>Alle Fotos werden sicher gespeichert. 💛<br>
+  Mobile-optimierte Webapp im Browser – keine native App nötig. Nur du kannst deine eigenen Fotos löschen (über dieses Gerät).</p>
+  <div class="device-id-note">
+    <strong>Geräte-ID:</strong>
+    <span class="device-id-value" id="deviceIdValue">wird geladen…</span>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Device ID  –  stable UUID stored in localStorage
+   ═══════════════════════════════════════════════════════════════════════════ */
+const STORAGE_KEYS = {
+  deviceId: 'hochzeit_galerie_device_id',
+  legacyDeviceId: 'wedding_device_id',
+  myPhotoIds: 'hochzeit_galerie_my_photo_ids',
+  legacyMyPhotoIds: 'my_photo_ids',
+  themeName: 'hochzeit_galerie_theme_name'
+};
+
+const THEMES = [
+  {
+    name: 'Wildblumenbild',
+    description: 'Am Bild ausgerichtet: Papierweiss, Puderrosa, Kornblumenblau und Buttergelb.',
+    themeColor: '#fcf7f2',
+    swatches: ['#fcf7f2', '#f6e6e6', '#dbafb5', '#cdddc6', '#f2cb87'],
+    vars: {
+      '--cream': '#fcf7f2',
+      '--blush': '#f6e6e6',
+      '--rose': '#dbafb5',
+      '--gold': '#f2cb87',
+      '--dark': '#5d534d',
+      '--mid': '#8e7d74',
+      '--light': '#e9ddd3',
+      '--surface': 'rgba(255,255,255,.82)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(239,225,219,.72)',
+      '--border-soft': 'rgba(202,184,174,.30)',
+      '--header-start': '#f5dde5',
+      '--header-mid': '#fbf6ef',
+      '--header-end': '#dde9ef',
+      '--accent-soft': '#fbf2ec',
+      '--secondary': '#cdddc6',
+      '--secondary-strong': '#9ab08d',
+      '--pill-bg': '#f8ece8',
+      '--pill-text': '#ae7d85',
+      '--overlay-start': 'rgba(93,83,77,.52)',
+      '--overlay-soft': 'rgba(93,83,77,.42)'
+    }
+  },
+  {
+    name: 'Lavendelwiese',
+    description: 'Kühlere Pastelle mit Lavendel, Salbei und rosigem Licht.',
+    themeColor: '#fcf9ff',
+    swatches: ['#fcf9ff', '#ede3f6', '#c7b6e5', '#cfe3d3', '#f4d6c8'],
+    vars: {
+      '--cream': '#fcf9ff',
+      '--blush': '#ede3f6',
+      '--rose': '#c7b6e5',
+      '--gold': '#f4d6c8',
+      '--dark': '#54485f',
+      '--mid': '#7b6f88',
+      '--light': '#ddd1ea',
+      '--surface': 'rgba(255,255,255,.84)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(221,209,234,.72)',
+      '--border-soft': 'rgba(199,182,229,.22)',
+      '--header-start': '#9f8bc8',
+      '--header-mid': '#c7b6e5',
+      '--header-end': '#cfe3d3',
+      '--accent-soft': '#f7eefb',
+      '--secondary': '#cfe3d3',
+      '--secondary-strong': '#97b7a0',
+      '--pill-bg': '#f1eafb',
+      '--pill-text': '#7f69ab',
+      '--overlay-start': 'rgba(84,72,95,.58)',
+      '--overlay-soft': 'rgba(84,72,95,.46)'
+    }
+  },
+  {
+    name: 'Sommerstrauss',
+    description: 'Blumiger und lebendiger, aber immer noch weich und leicht.',
+    themeColor: '#fffdf8',
+    swatches: ['#fffdf8', '#fbe7e1', '#e7a7a0', '#f3d7a4', '#bfd9c4'],
+    vars: {
+      '--cream': '#fffdf8',
+      '--blush': '#fbe7e1',
+      '--rose': '#e7a7a0',
+      '--gold': '#f3d7a4',
+      '--dark': '#614c46',
+      '--mid': '#8a7067',
+      '--light': '#f1d2c7',
+      '--surface': 'rgba(255,252,248,.88)',
+      '--surface-strong': 'rgba(255,255,255,.94)',
+      '--surface-tint': 'rgba(243,215,164,.46)',
+      '--border-soft': 'rgba(231,167,160,.2)',
+      '--header-start': '#d98d87',
+      '--header-mid': '#efb7a7',
+      '--header-end': '#bfd9c4',
+      '--accent-soft': '#fff0ea',
+      '--secondary': '#bfd9c4',
+      '--secondary-strong': '#88b195',
+      '--pill-bg': '#fef0e8',
+      '--pill-text': '#c66f67',
+      '--overlay-start': 'rgba(97,76,70,.58)',
+      '--overlay-soft': 'rgba(97,76,70,.46)'
+    }
+  },
+  {
+    name: 'Salbei und Rose',
+    description: 'Moderner, natürlicher Look mit etwas mehr Ruhe und Eleganz.',
+    themeColor: '#faf7f1',
+    swatches: ['#faf7f1', '#e8e0d6', '#d9a7b0', '#afc8b5', '#efcfb4'],
+    vars: {
+      '--cream': '#faf7f1',
+      '--blush': '#e8e0d6',
+      '--rose': '#d9a7b0',
+      '--gold': '#efcfb4',
+      '--dark': '#4f4a45',
+      '--mid': '#766d68',
+      '--light': '#ddd3c7',
+      '--surface': 'rgba(255,255,252,.86)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(232,224,214,.8)',
+      '--border-soft': 'rgba(217,167,176,.18)',
+      '--header-start': '#b98792',
+      '--header-mid': '#d9a7b0',
+      '--header-end': '#afc8b5',
+      '--accent-soft': '#f7eeea',
+      '--secondary': '#afc8b5',
+      '--secondary-strong': '#7fa18b',
+      '--pill-bg': '#f4ebe6',
+      '--pill-text': '#a86f7b',
+      '--overlay-start': 'rgba(79,74,69,.58)',
+      '--overlay-soft': 'rgba(79,74,69,.46)'
+    }
+  },
+  {
+    name: 'Pfirsichgarten',
+    description: 'Warme Apricot-Noten mit hellem Grün und sonniger Stimmung.',
+    themeColor: '#fff7f0',
+    swatches: ['#fff7f0', '#f9e1d2', '#f0b8a8', '#d7e8c8', '#f6d98c'],
+    vars: {
+      '--cream': '#fff7f0',
+      '--blush': '#f9e1d2',
+      '--rose': '#f0b8a8',
+      '--gold': '#f6d98c',
+      '--dark': '#684d43',
+      '--mid': '#907065',
+      '--light': '#efcfbf',
+      '--surface': 'rgba(255,252,247,.86)',
+      '--surface-strong': 'rgba(255,255,255,.94)',
+      '--surface-tint': 'rgba(249,225,210,.76)',
+      '--border-soft': 'rgba(240,184,168,.2)',
+      '--header-start': '#de9a84',
+      '--header-mid': '#f0b8a8',
+      '--header-end': '#d7e8c8',
+      '--accent-soft': '#fff0e7',
+      '--secondary': '#d7e8c8',
+      '--secondary-strong': '#98b886',
+      '--pill-bg': '#fff0e2',
+      '--pill-text': '#cd7d69',
+      '--overlay-start': 'rgba(104,77,67,.58)',
+      '--overlay-soft': 'rgba(104,77,67,.46)'
+    }
+  },
+  {
+    name: 'Zarte Wildblume',
+    description: 'Die natürlichste Palette mit Papier, Trockenblumen und Fliederhauch.',
+    themeColor: '#f9f6f0',
+    swatches: ['#f9f6f0', '#efe6dd', '#cfa7a2', '#c6d8c0', '#dcc8e8'],
+    vars: {
+      '--cream': '#f9f6f0',
+      '--blush': '#efe6dd',
+      '--rose': '#cfa7a2',
+      '--gold': '#dcc8e8',
+      '--dark': '#5a514d',
+      '--mid': '#7f746f',
+      '--light': '#e3d8cf',
+      '--surface': 'rgba(255,255,251,.85)',
+      '--surface-strong': 'rgba(255,255,255,.92)',
+      '--surface-tint': 'rgba(239,230,221,.8)',
+      '--border-soft': 'rgba(207,167,162,.18)',
+      '--header-start': '#b98e8a',
+      '--header-mid': '#cfa7a2',
+      '--header-end': '#c6d8c0',
+      '--accent-soft': '#f7efeb',
+      '--secondary': '#c6d8c0',
+      '--secondary-strong': '#8fa98a',
+      '--pill-bg': '#f3ebe7',
+      '--pill-text': '#9f6e69',
+      '--overlay-start': 'rgba(90,81,77,.58)',
+      '--overlay-soft': 'rgba(90,81,77,.46)'
+    }
+  }
+];
+
+function getDeviceId() {
+  let id = localStorage.getItem(STORAGE_KEYS.deviceId) || localStorage.getItem(STORAGE_KEYS.legacyDeviceId);
+  if (!id || id.length < 8) {
+    // Crypto-random UUID
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      id = crypto.randomUUID();
+    } else {
+      // Nur Fallback für Geräteerkennung in alten Browsern; nicht für Auth/Sicherheit.
+      console.warn('crypto.randomUUID ist nicht verfügbar. Geräte-ID-Fallback wird verwendet.');
+      id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+    localStorage.setItem(STORAGE_KEYS.deviceId, id);
+  }
+  return id;
+}
+const DEVICE_ID = getDeviceId();
+document.getElementById('deviceIdValue').textContent = DEVICE_ID;
+
+function getUploaderMetadata() {
+  const ua = navigator.userAgent || '';
+  const lowerUa = ua.toLowerCase();
+  let browser = 'Unbekannter Browser';
+  let os = 'Unbekanntes System';
+  let device = 'Unbekanntes Gerät';
+
+  if (/edg\//i.test(ua)) browser = 'Microsoft Edge';
+  else if (/opr\//i.test(ua) || /opera/i.test(ua)) browser = 'Opera';
+  else if (/chrome\//i.test(ua) && !/edg\//i.test(ua)) browser = 'Google Chrome';
+  else if (/firefox\//i.test(ua)) browser = 'Mozilla Firefox';
+  else if (/safari\//i.test(ua) && !/chrome\//i.test(ua)) browser = 'Safari';
+
+  if (/iphone/i.test(ua)) {
+    os = 'iOS';
+    device = 'iPhone';
+  } else if (/ipad/i.test(ua)) {
+    os = 'iPadOS';
+    device = 'iPad';
+  } else if (/android/i.test(ua)) {
+    os = 'Android';
+    device = /mobile/i.test(ua) ? 'Android Smartphone' : 'Android Tablet';
+  } else if (/mac os x/i.test(ua)) {
+    os = 'macOS';
+    device = 'Mac';
+  } else if (/windows/i.test(ua)) {
+    os = 'Windows';
+    device = 'Windows-PC';
+  } else if (/linux/i.test(ua)) {
+    os = 'Linux';
+    device = 'Linux-Gerät';
+  }
+
+  if (navigator.userAgentData?.mobile && !/iphone|android/i.test(lowerUa)) {
+    device = 'Mobiles Gerät';
+  }
+
+  return {
+    browser,
+    os,
+    device,
+    language: navigator.language || '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    platform: navigator.platform || '',
+    vendor: navigator.vendor || '',
+    screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   State
+   ═══════════════════════════════════════════════════════════════════════════ */
+let photos     = [];   // [{id, filename, original_name, uploaded_at, size}]
+let lbIndex    = 0;
+let pendingFiles = [];
+let selectedAdminIds = new Set();
+let activeThemeIndex = 0;
+let galleryScope = 'active';
+let appConfig = {
+  maxFileMb: 100,
+  maxCommentLength: 500
+};
+
+function isArchiveView() {
+  return isAdminUnlocked() && galleryScope === 'archived';
+}
+
+function setGalleryScope(scope) {
+  if (!isAdminUnlocked()) {
+    galleryScope = 'active';
+    selectedAdminIds = new Set();
+    updateAdminUi();
+    loadGallery();
+    return;
+  }
+  galleryScope = scope === 'archived' ? 'archived' : 'active';
+  selectedAdminIds = new Set();
+  updateAdminUi();
+  loadGallery();
+}
+
+function getStoredThemeIndex() {
+  const storedName = localStorage.getItem(STORAGE_KEYS.themeName);
+  const index = THEMES.findIndex(theme => theme.name === storedName);
+  return index >= 0 ? index : 0;
+}
+
+function renderThemePalette(theme) {
+  const palette = document.getElementById('themePalette');
+  palette.innerHTML = '';
+  theme.swatches.forEach(color => {
+    const swatch = document.createElement('span');
+    swatch.className = 'theme-swatch';
+    swatch.style.background = color;
+    palette.appendChild(swatch);
+  });
+}
+
+function applyTheme(index) {
+  activeThemeIndex = (index + THEMES.length) % THEMES.length;
+  const theme = THEMES[activeThemeIndex];
+  const root = document.documentElement;
+
+  Object.entries(theme.vars).forEach(([key, value]) => {
+    root.style.setProperty(key, value);
+  });
+
+  localStorage.setItem(STORAGE_KEYS.themeName, theme.name);
+  document.getElementById('themeName').textContent = theme.name;
+  document.getElementById('themeDescription').textContent = theme.description;
+  document.getElementById('themeCounter').textContent = `${activeThemeIndex + 1} / ${THEMES.length}`;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.themeColor);
+  renderThemePalette(theme);
+}
+
+function cycleTheme(direction) {
+  applyTheme(activeThemeIndex + direction);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Toast helper
+   ═══════════════════════════════════════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3200);
+}
+
+function getAdminPassword() {
+  return sessionStorage.getItem('admin_password') || '';
+}
+
+function setAdminPassword(password) {
+  if (password) {
+    sessionStorage.setItem('admin_password', password);
+  } else {
+    sessionStorage.removeItem('admin_password');
+  }
+  updateAdminUi();
+}
+
+function isAdminUnlocked() {
+  return Boolean(getAdminPassword());
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Gallery
+   ═══════════════════════════════════════════════════════════════════════════ */
+async function loadGallery() {
+  try {
+    const isAdminView = isAdminUnlocked();
+    if (!isAdminView && galleryScope !== 'active') {
+      galleryScope = 'active';
+    }
+    const url = isAdminView
+      ? `/api/admin/photos?scope=${encodeURIComponent(galleryScope)}`
+      : '/api/photos';
+    const headers = isAdminView
+      ? { 'X-Admin-Password': getAdminPassword() }
+      : undefined;
+    const res = await fetch(url, headers ? { headers } : undefined);
+    if (!res.ok) throw new Error('Fehler beim Laden');
+    photos = await res.json();
+    renderGallery();
+  } catch (e) {
+    document.getElementById('photoGrid').innerHTML =
+      '<div class="empty-state"><span class="empty-icon">⚠️</span><p>Galerie konnte nicht geladen werden.</p></div>';
+  }
+}
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('config');
+    const data = await res.json();
+    appConfig.maxFileMb = data.maxFileMb || appConfig.maxFileMb;
+    appConfig.maxCommentLength = data.maxCommentLength || appConfig.maxCommentLength;
+  } catch (_e) {
+    // keep defaults
+  }
+
+  document.getElementById('uploadHint').textContent =
+    `Smartphone-freundlich · JPEG · PNG · WebP · HEIC — bis ${appConfig.maxFileMb} MB je Bild`;
+  messageInput.maxLength = appConfig.maxCommentLength;
+  messageInput.setAttribute('maxlength', String(appConfig.maxCommentLength));
+  document.getElementById('messageHelp').textContent =
+    `Die Nachricht wird zusammen mit den ausgewählten Bildern angezeigt (max. ${appConfig.maxCommentLength} Zeichen).`;
+}
+
+function renderGallery() {
+  const grid = document.getElementById('photoGrid');
+  const count = document.getElementById('photoCount');
+  const title = document.getElementById('galleryTitle');
+  const archiveView = isArchiveView();
+  selectedAdminIds = new Set([...selectedAdminIds].filter(id => photos.some(photo => photo.id === id)));
+
+  if (archiveView) {
+    title.textContent = 'Archiv';
+    count.textContent = photos.length === 1 ? '1 Foto im Archiv' : `${photos.length} Fotos im Archiv`;
+  } else {
+    title.textContent = 'Galerie';
+    count.textContent = photos.length === 1 ? '1 Foto' : `${photos.length} Fotos`;
+  }
+
+  if (photos.length === 0) {
+    grid.innerHTML = archiveView
+      ? '<div class="empty-state"><span class="empty-icon">🗂️</span><p>Im Archiv liegen aktuell keine Fotos.</p></div>'
+      : '<div class="empty-state"><span class="empty-icon">📸</span><p>Noch keine Fotos. Sei der Erste!</p></div>';
+    updateAdminUi();
+    return;
+  }
+
+  grid.innerHTML = '';
+  photos.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    if (isAdminUnlocked()) card.classList.add('admin-mode');
+    card.dataset.index = i;
+    card.innerHTML = `
+      <img src="/uploads/${encodeURIComponent(p.filename)}?thumb=1"
+           alt="${escHtml(p.original_name || 'Foto')}"
+           loading="lazy"
+           decoding="async" />
+      <div class="card-overlay">
+        <input class="select-checkbox" data-id="${p.id}" type="checkbox" aria-label="Foto auswählen" ${selectedAdminIds.has(p.id) ? 'checked' : ''} />
+        <button class="delete-btn" data-id="${p.id}" title="Foto löschen" aria-label="Dieses Foto löschen">🗑 Löschen</button>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="comment-pill">${p.comment ? '💌 Mit Gruß' : '📷 Foto'}</span>
+          <span>${formatDate(p.uploaded_at)}</span>
+        </div>
+        <div class="card-title">${escHtml(p.original_name || 'Foto')}</div>
+        ${p.comment ? `<div class="card-comment">${escHtml(p.comment)}</div>` : ''}
+        ${isAdminUnlocked() && p.device_id ? `
+          <div class="card-admin-meta">
+            <div><strong>Uploader-ID:</strong> <code>${escHtml(p.device_id)}</code></div>
+            ${p.uploader_summary ? `<div><strong>Gerät:</strong> ${escHtml(p.uploader_summary)}</div>` : ''}
+            ${renderUploaderDetails(p.uploader_info, p.uploader_ip)}
+            ${p.archived_at ? `<div><strong>Archiviert:</strong> ${escHtml(formatDate(p.archived_at))}</div>` : ''}
+          </div>
+        ` : ''}
+      </div>`;
+
+    // Click → lightbox (not on delete btn)
+    card.addEventListener('click', e => {
+      if (e.target.closest('.delete-btn') || e.target.closest('.select-checkbox')) return;
+      openLightbox(i);
+    });
+
+    // Delete
+    card.querySelector('.delete-btn')?.addEventListener('click', e => {
+      e.stopPropagation();
+      deletePhoto(p.id, card);
+    });
+
+    card.querySelector('.select-checkbox')?.addEventListener('click', e => {
+      e.stopPropagation();
+    });
+    card.querySelector('.select-checkbox')?.addEventListener('change', e => {
+      if (e.target.checked) {
+        selectedAdminIds.add(p.id);
+      } else {
+        selectedAdminIds.delete(p.id);
+      }
+      updateAdminUi();
+    });
+
+    grid.appendChild(card);
+  });
+
+  // Mark own photos (we track which ones we uploaded in this session via localStorage)
+  markOwnPhotos();
+  updateAdminUi();
+}
+
+// Track uploaded photo IDs per device so delete button is shown even when server
+// doesn't expose device_id in the listing (privacy).
+function getMyPhotoIds() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.myPhotoIds) || localStorage.getItem(STORAGE_KEYS.legacyMyPhotoIds) || '[]';
+    const ids = JSON.parse(raw);
+    localStorage.setItem(STORAGE_KEYS.myPhotoIds, JSON.stringify(ids));
+    return ids;
+  }
+  catch { return []; }
+}
+function addMyPhotoId(id) {
+  const ids = getMyPhotoIds();
+  if (!ids.includes(id)) { ids.push(id); localStorage.setItem(STORAGE_KEYS.myPhotoIds, JSON.stringify(ids)); }
+}
+function removeMyPhotoId(id) {
+  const ids = getMyPhotoIds().filter(x => x !== id);
+  localStorage.setItem(STORAGE_KEYS.myPhotoIds, JSON.stringify(ids));
+}
+
+function renderUploaderDetails(rawInfo, rawIp) {
+  try {
+    const info = rawInfo ? JSON.parse(rawInfo) : {};
+    const lines = [];
+
+    if (info.language) lines.push(`<div><strong>Sprache:</strong> ${escHtml(info.language)}</div>`);
+    if (info.timezone) lines.push(`<div><strong>Zeitzone:</strong> ${escHtml(info.timezone)}</div>`);
+    if (info.platform) lines.push(`<div><strong>Plattform:</strong> ${escHtml(info.platform)}</div>`);
+    if (info.vendor) lines.push(`<div><strong>Hersteller:</strong> ${escHtml(info.vendor)}</div>`);
+    if (info.screen && info.screen !== '0x0') lines.push(`<div><strong>Display:</strong> ${escHtml(info.screen)}</div>`);
+    if (rawIp) lines.push(`<div><strong>IP:</strong> <code>${escHtml(rawIp)}</code></div>`);
+    lines.push('<div><strong>Konto:</strong> Apple-ID/Google-Konto ist ohne separaten Login im Browser nicht direkt auslesbar.</div>');
+
+    return lines.join('');
+  } catch {
+    return rawIp ? `<div><strong>IP:</strong> <code>${escHtml(rawIp)}</code></div>` : '';
+  }
+}
+
+function markOwnPhotos() {
+  const myIds = new Set(getMyPhotoIds());
+  document.querySelectorAll('.photo-card').forEach(card => {
+    const idx = parseInt(card.dataset.index, 10);
+    const photo = photos[idx];
+    if (photo && myIds.has(photo.id)) {
+      card.classList.add('mine');
+    }
+  });
+}
+
+async function deletePhoto(photoId, card) {
+  if (!confirm('Dieses Foto wirklich löschen?')) return;
+  try {
+    const res = await fetch(`/api/photos/${photoId}`, {
+      method: 'DELETE',
+      headers: { 'X-Device-Id': DEVICE_ID }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Fehler beim Löschen');
+    }
+    removeMyPhotoId(photoId);
+    selectedAdminIds.delete(photoId);
+    showToast('Foto gelöscht ✓', 'red');
+    card.style.transition = 'opacity .3s, transform .3s';
+    card.style.opacity    = '0';
+    card.style.transform  = 'scale(.9)';
+    setTimeout(() => { card.remove(); loadGallery(); }, 350);
+  } catch (e) {
+    showToast(e.message, 'red');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Lightbox
+   ═══════════════════════════════════════════════════════════════════════════ */
+function openLightbox(index) {
+  lbIndex = index;
+  const lb  = document.getElementById('lightbox');
+  const img = document.getElementById('lbImg');
+  const caption = document.getElementById('lbCaption');
+  const photo = photos[lbIndex];
+  const captionText = document.getElementById('lbCaptionText');
+  img.src   = `/uploads/${encodeURIComponent(photos[lbIndex].filename)}`;
+  document.getElementById('lbCaptionTitle').textContent = photo.original_name || 'Foto';
+  captionText.textContent = photo.comment || '';
+  captionText.hidden = !photo.comment;
+  caption.hidden = false;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lbImg').src = '';
+  document.getElementById('lbCaption').hidden = true;
+  document.body.style.overflow = '';
+}
+
+function lbNavigate(dir) {
+  lbIndex = (lbIndex + dir + photos.length) % photos.length;
+  const img = document.getElementById('lbImg');
+  img.style.opacity = '0';
+  setTimeout(() => {
+    img.src = `/uploads/${encodeURIComponent(photos[lbIndex].filename)}`;
+    img.style.opacity = '1';
+  }, 120);
+}
+
+document.getElementById('lbClose').onclick = closeLightbox;
+document.getElementById('lbPrev').onclick   = () => lbNavigate(-1);
+document.getElementById('lbNext').onclick   = () => lbNavigate(+1);
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLightbox();
+});
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape')     closeLightbox();
+  if (e.key === 'ArrowLeft')  lbNavigate(-1);
+  if (e.key === 'ArrowRight') lbNavigate(+1);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Upload
+   ═══════════════════════════════════════════════════════════════════════════ */
+const dropZone   = document.getElementById('dropZone');
+const fileInput  = document.getElementById('fileInput');
+const uploadBtn  = document.getElementById('uploadBtn');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar  = document.getElementById('progressBar');
+const statusMsg  = document.getElementById('statusMsg');
+const previewStrip = document.getElementById('previewStrip');
+const messageInput = document.getElementById('messageInput');
+
+// Drag & drop
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', ()   => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('image/')));
+});
+fileInput.addEventListener('change', () => handleFiles([...fileInput.files]));
+
+function handleFiles(files) {
+  if (!files.length) return;
+  pendingFiles = files;
+  uploadBtn.disabled = false;
+  setStatus('', '');
+
+  // Preview
+  previewStrip.innerHTML = '';
+  files.slice(0, 10).forEach(file => {
+    const img = document.createElement('img');
+    img.className = 'preview-thumb';
+    img.src       = URL.createObjectURL(file);
+    img.onload    = () => URL.revokeObjectURL(img.src);
+    previewStrip.appendChild(img);
+  });
+  if (files.length > 10) {
+    const more = document.createElement('span');
+    more.style.cssText = 'display:flex;align-items:center;font-size:.8rem;color:var(--mid)';
+    more.textContent   = `+${files.length - 10} weitere`;
+    previewStrip.appendChild(more);
+  }
+  setStatus(`${files.length} Foto${files.length > 1 ? 's' : ''} ausgewählt`, '');
+}
+
+function setStatus(msg, type) {
+  statusMsg.textContent = msg;
+  statusMsg.className   = 'status-msg ' + type;
+}
+
+uploadBtn.addEventListener('click', async () => {
+  if (!pendingFiles.length) return;
+  uploadBtn.disabled = true;
+  progressWrap.classList.add('show');
+  progressBar.style.width = '0%';
+
+  let uploaded = 0;
+  let failed   = 0;
+
+  for (let i = 0; i < pendingFiles.length; i++) {
+    const file = pendingFiles[i];
+    setStatus(`Lade hoch… (${i+1}/${pendingFiles.length})`, '');
+
+    try {
+      const formData = new FormData();
+      formData.append('photo',     file);
+      formData.append('device_id', DEVICE_ID);
+      formData.append('comment', messageInput.value.trim());
+      formData.append('uploader_info', JSON.stringify(getUploaderMetadata()));
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body:   formData
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      addMyPhotoId(data.id);
+      uploaded++;
+    } catch (e) {
+      failed++;
+      console.error('Upload failed:', file.name, e);
+    }
+
+    progressBar.style.width = `${Math.round((i + 1) / pendingFiles.length * 100)}%`;
+  }
+
+  // Done
+  setTimeout(() => { progressWrap.classList.remove('show'); }, 800);
+  previewStrip.innerHTML = '';
+  pendingFiles = [];
+  fileInput.value = '';
+  messageInput.value = '';
+  uploadBtn.disabled = true;
+
+  if (failed === 0) {
+    setStatus(`${uploaded} Foto${uploaded > 1 ? 's' : ''} erfolgreich hochgeladen! 🎉`, 'success');
+    showToast(`${uploaded} Foto${uploaded > 1 ? 's' : ''} hochgeladen 🎉`, 'green');
+  } else {
+    setStatus(`${uploaded} hochgeladen, ${failed} fehlgeschlagen.`, 'error');
+  }
+
+  loadGallery();
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Refresh
+   ═══════════════════════════════════════════════════════════════════════════ */
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  loadGallery();
+  showToast('Galerie aktualisiert');
+});
+
+document.getElementById('themePrevBtn').addEventListener('click', () => cycleTheme(-1));
+document.getElementById('themeNextBtn').addEventListener('click', () => cycleTheme(1));
+
+document.getElementById('adminToggleBtn').addEventListener('click', () => {
+  document.getElementById('adminPanel').classList.toggle('hidden');
+});
+
+document.getElementById('adminLoginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const password = document.getElementById('adminPasswordInput').value;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Admin-Login fehlgeschlagen');
+    setAdminPassword(password);
+    showToast('Admin-Bereich entsperrt', 'green');
+    loadGallery();
+  } catch (e) {
+    showToast(e.message, 'red');
+  }
+});
+
+document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+  selectedAdminIds = new Set();
+  galleryScope = 'active';
+  setAdminPassword('');
+  document.getElementById('adminPasswordInput').value = '';
+  showToast('Admin-Bereich gesperrt');
+  loadGallery();
+});
+
+document.getElementById('deleteSelectedBtn').addEventListener('click', async () => {
+  if (!selectedAdminIds.size) return;
+  const isArchive = isArchiveView();
+  const confirmationText = isArchive
+    ? `${selectedAdminIds.size} archivierte Bilder endgültig löschen?`
+    : `${selectedAdminIds.size} ausgewählte Bilder ins Archiv verschieben?`;
+  if (!confirm(confirmationText)) return;
+  try {
+    const res = await fetch(
+      isArchive ? '/api/admin/delete-archived-selected' : '/api/admin/delete-selected',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Password': getAdminPassword()
+        },
+        body: JSON.stringify({ ids: [...selectedAdminIds] })
+      }
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Löschen fehlgeschlagen');
+    if (isArchive) {
+      for (const id of selectedAdminIds) removeMyPhotoId(id);
+    }
+    selectedAdminIds = new Set();
+    if (isArchive) {
+      showToast(`${data.deleted || 0} Bilder gelöscht`, 'red');
+    } else {
+      showToast(`${data.archived || 0} Bilder archiviert`, 'green');
+    }
+    loadGallery();
+  } catch (e) {
+    showToast(e.message, 'red');
+  }
+});
+
+document.getElementById('restoreSelectedBtn').addEventListener('click', async () => {
+  if (!selectedAdminIds.size || !isArchiveView()) return;
+  if (!confirm(`${selectedAdminIds.size} archivierte Bilder zur Galerie zurück verschieben?`)) return;
+  try {
+    const res = await fetch('/api/admin/restore-selected', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Password': getAdminPassword()
+      },
+      body: JSON.stringify({ ids: [...selectedAdminIds] })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Wiederherstellen fehlgeschlagen');
+    selectedAdminIds = new Set();
+    showToast(`${data.restored || 0} Bilder wiederhergestellt`, 'green');
+    loadGallery();
+  } catch (e) {
+    showToast(e.message, 'red');
+  }
+});
+
+document.getElementById('galleryTabActive').addEventListener('click', () => {
+  if (!isAdminUnlocked() || !isArchiveView()) return;
+  setGalleryScope('active');
+});
+
+document.getElementById('galleryTabArchived').addEventListener('click', () => {
+  if (!isAdminUnlocked() || isArchiveView()) return;
+  setGalleryScope('archived');
+});
+
+// Auto-refresh every 30 s when tab is visible
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) loadGallery();
+});
+setInterval(() => { if (!document.hidden) loadGallery(); }, 30_000);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Helpers
+   ═══════════════════════════════════════════════════════════════════════════ */
+function escHtml(str) {
+  return String(str).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(value.replace(' ', 'T'));
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
+function updateAdminUi() {
+  const unlocked = isAdminUnlocked();
+  const count = selectedAdminIds.size;
+  const status = document.getElementById('adminStatus');
+  const actionButton = document.getElementById('deleteSelectedBtn');
+  const restoreButton = document.getElementById('restoreSelectedBtn');
+  const tabs = document.getElementById('galleryTabs');
+  const activeTab = document.getElementById('galleryTabActive');
+  const archivedTab = document.getElementById('galleryTabArchived');
+  const archiveMode = isArchiveView();
+  status.textContent = unlocked
+    ? `Entsperrt · ${count} Bild${count === 1 ? '' : 'er'} ausgewählt`
+    : 'Noch gesperrt';
+  status.className = 'admin-status' + (unlocked ? ' ok' : '');
+  document.getElementById('adminToggleBtn').textContent = unlocked ? '🔓 Entsperrt' : '🔐 Freischalten';
+  tabs.classList.toggle('show', unlocked);
+  activeTab.classList.toggle('active', !archiveMode);
+  archivedTab.classList.toggle('active', archiveMode);
+  actionButton.textContent = archiveMode ? 'Aus Archiv endgültig löschen' : 'Ausgewählte Bilder archivieren';
+  actionButton.disabled = !unlocked || count === 0;
+  restoreButton.hidden = !archiveMode;
+  restoreButton.disabled = !unlocked || !archiveMode || count === 0;
+}
+
+/* ── Init ── */
+applyTheme(0);
+updateAdminUi();
+loadConfig().then(loadGallery);
+</script>
+</body>
+</html>

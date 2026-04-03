@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>__SPACE_NAME__</title>
+  <meta name="description" content="Privater Hochzeits-Space mit geheimem Zugang und mobilem Foto-Upload direkt im Browser." />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="theme-color" content="#f5e6d3" />
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body class="space-page">
+  <header class="space-hero">
+    <div class="page-shell">
+      <span class="header-rings">💍</span>
+      <span class="eyebrow">Privater Hochzeits-Space</span>
+      <h1 id="space-title">__SPACE_NAME__</h1>
+      <p class="space-intro">Teile eure Bilder direkt vom Handy und sammle Erinnerungen an einem Ort. Dieser Bereich ist nur über euren echten Geheimlink oder den QR-Code erreichbar.</p>
+      <div class="badge-row hero-badges">
+        <span class="badge">Geschützter Zugang</span>
+        <span id="upload-limit-badge" class="badge">__UPLOAD_LIMIT_LABEL__</span>
+        <span class="badge">Kommentar bis __MAX_COMMENT_LENGTH__ Zeichen</span>
+      </div>
+      <div class="mobile-note">📱 Mobile Webapp ohne App-Download · für Gäste direkt im Browser</div>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="upload-section split-layout">
+      <article class="section-card stack">
+        <div class="section-heading stack compact-stack">
+          <span class="eyebrow">Fotos hochladen</span>
+          <h2>Momente vom Tag hinzufügen</h2>
+          <p class="muted">Mehrere Bilder gleichzeitig sind möglich. Die Galerie lädt danach automatisch neu.</p>
+        </div>
+
+        <div class="drop-zone" id="drop-zone">
+          <input id="photo-input" class="visually-hidden-input" type="file" accept="image/*" multiple />
+          <input id="camera-input" class="visually-hidden-input" type="file" accept="image/*" capture="environment" />
+          <span class="drop-icon">📸</span>
+          <h3>Hier tippen oder Bilder hineinziehen</h3>
+          <p id="upload-hint">Galerie oder Dateispeicher oeffnen · mehrere Bilder auf einmal · __UPLOAD_LIMIT_LABEL__</p>
+          <div class="picker-actions">
+            <button id="pick-gallery-button" class="upload-btn picker-button" type="button">Aus Galerie oder Dateien waehlen</button>
+            <button id="pick-camera-button" class="refresh-btn picker-button" type="button">Kamera oeffnen</button>
+          </div>
+        </div>
+
+        <div id="preview-strip" class="preview-strip"></div>
+
+        <div class="field">
+          <label for="comment-input">Kurzer Gruß oder Bildnotiz</label>
+          <textarea id="comment-input" maxlength="__MAX_COMMENT_LENGTH__" placeholder="Zum Beispiel: Erster Tanz, Sonnenuntergang im Garten oder eine kurze Nachricht an das Brautpaar"></textarea>
+          <p class="field-help">Der Text wird zusammen mit allen aktuell ausgewählten Bildern gespeichert.</p>
+        </div>
+
+        <div class="button-row">
+          <button id="upload-button" class="upload-btn" type="button" disabled>Fotos hochladen</button>
+        </div>
+
+        <div id="progress-wrap" class="progress-wrap">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <p id="upload-status" class="status-msg muted"></p>
+      </article>
+
+      <article class="section-card stack admin-card">
+        <div class="space-topbar">
+          <div>
+            <span class="eyebrow">Brautpaar-Bereich</span>
+            <h2>Geschützter Bereich für dieses Event</h2>
+          </div>
+          <button id="admin-logout-button" class="refresh-btn hidden" type="button">Sperren</button>
+        </div>
+
+        <div id="admin-login-card" class="stack">
+          <p class="muted">Nur für das Brautpaar oder die verantwortliche Person dieses Spaces.</p>
+          <div class="field">
+            <label for="admin-password">Passwort für den Brautpaar-Bereich</label>
+            <input id="admin-password" class="admin-password-input" type="password" placeholder="Passwort eingeben" autocomplete="current-password" />
+          </div>
+          <div class="button-row">
+            <button id="admin-login-button" class="upload-btn" type="button">Brautpaar-Bereich öffnen</button>
+          </div>
+        </div>
+
+        <div id="admin-toolbar" class="stack hidden">
+          <div class="button-row admin-actions-row">
+            <button id="archive-selected-button" class="upload-btn" type="button">Auswahl archivieren</button>
+            <button id="restore-selected-button" class="refresh-btn hidden" type="button">Aus Archiv zurückholen</button>
+            <button id="delete-selected-button" class="refresh-btn hidden" type="button">Archiv endgültig löschen</button>
+          </div>
+        </div>
+
+        <p id="admin-status" class="status-msg muted"></p>
+
+        <div class="device-id-note">
+          <strong>Geräte-ID:</strong>
+          <span id="device-id-value">wird geladen…</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="gallery-section">
+      <div class="gallery-header">
+        <div>
+          <span class="eyebrow">Galerie</span>
+          <h2 id="gallery-heading">Aktive Fotos</h2>
+        </div>
+        <div class="gallery-header-actions">
+          <div class="gallery-tabs show" aria-label="Galerieansicht umschalten">
+            <button data-scope="active" class="gallery-tab scope-button active" type="button">Alle Fotos</button>
+            <button data-scope="mine" class="gallery-tab scope-button" type="button">Meine Bilder</button>
+            <button id="archived-scope-button" data-scope="archived" class="gallery-tab scope-button hidden" type="button">Archiv</button>
+          </div>
+          <span id="gallery-meta" class="photo-count">Lädt…</span>
+        </div>
+      </div>
+      <div id="gallery" class="gallery-grid space-gallery-grid"></div>
+    </section>
+  </main>
+
+  <script>
+    const THEMES = [
+      {
+        name: 'Wildblumenbild',
+        description: 'Puderrosa, Kornblumenblau und helles Papier als ruhige, warme Grundstimmung.',
+        themeColor: '#fcf7f2',
+        swatches: ['#fcf7f2', '#f6e6e6', '#dbafb5', '#cdddc6', '#f2cb87'],
+        vars: {
+          '--sand': '#fcf7f2',
+          '--paper': '#fffdf9',
+          '--paper-strong': 'rgba(255,255,255,0.9)',
+          '--ink': '#5d534d',
+          '--muted': '#8e7d74',
+          '--rose': '#dbafb5',
+          '--gold': '#f2cb87',
+          '--sage': '#cdddc6'
+        }
+      },
+      {
+        name: 'Lavendelwiese',
+        description: 'Kühler, weicher und etwas moderner mit Lavendel, Salbei und hellem Porzellan.',
+        themeColor: '#fcf9ff',
+        swatches: ['#fcf9ff', '#ede3f6', '#c7b6e5', '#cfe3d3', '#f4d6c8'],
+        vars: {
+          '--sand': '#fcf9ff',
+          '--paper': '#fffcff',
+          '--paper-strong': 'rgba(255,255,255,0.92)',
+          '--ink': '#54485f',
+          '--muted': '#7b6f88',
+          '--rose': '#c7b6e5',
+          '--gold': '#f4d6c8',
+          '--sage': '#cfe3d3'
+        }
+      },
+      {
+        name: 'Sommerstrauss',
+        description: 'Lebendiger, sonniger und dennoch weich mit Apricot, Blush und warmem Grün.',
+        themeColor: '#fffdf8',
+        swatches: ['#fffdf8', '#fbe7e1', '#e7a7a0', '#f3d7a4', '#bfd9c4'],
+        vars: {
+          '--sand': '#fffdf8',
+          '--paper': '#fffdfa',
+          '--paper-strong': 'rgba(255,255,255,0.92)',
+          '--ink': '#614c46',
+          '--muted': '#8a7067',
+          '--rose': '#e7a7a0',
+          '--gold': '#f3d7a4',
+          '--sage': '#bfd9c4'
+        }
+      }
+    ];
+
+    const spaceBasePath = window.location.pathname.replace(/\/$/, '');
+    const storagePrefix = `space-gallery::${spaceBasePath}`;
+    const deviceIdKey = `${storagePrefix}::device-id`;
+    const ownPhotosKey = `${storagePrefix}::own-photos`;
+    const galleryElement = document.getElementById('gallery');
+    const galleryMetaElement = document.getElementById('gallery-meta');
+    const galleryHeadingElement = document.getElementById('gallery-heading');
+    const archivedScopeButton = document.getElementById('archived-scope-button');
+    const uploadStatusElement = document.getElementById('upload-status');
+    const adminStatusElement = document.getElementById('admin-status');
+    const uploadButton = document.getElementById('upload-button');
+    const photoInput = document.getElementById('photo-input');
+    const cameraInput = document.getElementById('camera-input');
+    const dropZone = document.getElementById('drop-zone');
+    const pickGalleryButton = document.getElementById('pick-gallery-button');
+    const pickCameraButton = document.getElementById('pick-camera-button');
+    const previewStrip = document.getElementById('preview-strip');
+    const progressWrap = document.getElementById('progress-wrap');
+    const progressBar = document.getElementById('progress-bar');
+    const uploadHint = document.getElementById('upload-hint');
+    const uploadLimitBadge = document.getElementById('upload-limit-badge');
+    const commentInput = document.getElementById('comment-input');
+    const adminPasswordInput = document.getElementById('admin-password');
+    const adminLoginButton = document.getElementById('admin-login-button');
+    const adminLogoutButton = document.getElementById('admin-logout-button');
+    const adminLoginCard = document.getElementById('admin-login-card');
+    const adminToolbar = document.getElementById('admin-toolbar');
+    const archiveSelectedButton = document.getElementById('archive-selected-button');
+    const restoreSelectedButton = document.getElementById('restore-selected-button');
+    const deleteSelectedButton = document.getElementById('delete-selected-button');
+    const deviceIdValue = document.getElementById('device-id-value');
+
+    let adminUnlocked = false;
+    let galleryScope = 'active';
+    let selectedPhotoIds = new Set();
+    let pendingFiles = [];
+
+    function createDeviceId() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+
+      if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+        const bytes = crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = [...bytes].map(value => value.toString(16).padStart(2, '0'));
+        return [
+          hex.slice(0, 4).join(''),
+          hex.slice(4, 6).join(''),
+          hex.slice(6, 8).join(''),
+          hex.slice(8, 10).join(''),
+          hex.slice(10, 16).join('')
+        ].join('-');
+      }
+
+      console.warn('crypto.randomUUID ist nicht verfuegbar. Geraete-ID-Fallback wird verwendet.');
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, char => {
+        const random = Math.random() * 16 | 0;
+        const value = char === 'x' ? random : (random & 0x3 | 0x8);
+        return value.toString(16);
+      });
+    }
+
+    function getDeviceId() {
+      let current = localStorage.getItem(deviceIdKey);
+      if (!current) {
+        current = createDeviceId();
+        localStorage.setItem(deviceIdKey, current);
+      }
+      return current;
+    }
+
+    function applyTheme(index) {
+      const theme = THEMES[index] || THEMES[0];
+      for (const [key, value] of Object.entries(theme.vars)) {
+        document.documentElement.style.setProperty(key, value);
+      }
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.themeColor);
+    }
+
+    function getOwnPhotoIds() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(ownPhotosKey) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function setOwnPhotoIds(ids) {
+      localStorage.setItem(ownPhotosKey, JSON.stringify(ids));
+    }
+
+    function rememberOwnPhoto(photoId) {
+      const ids = new Set(getOwnPhotoIds());
+      ids.add(photoId);
+      setOwnPhotoIds([...ids]);
+    }
+
+    function forgetOwnPhoto(photoId) {
+      const ids = new Set(getOwnPhotoIds());
+      ids.delete(photoId);
+      setOwnPhotoIds([...ids]);
+    }
+
+    function setStatus(element, message, kind = 'muted') {
+      element.textContent = message;
+      element.className = `status-msg ${kind}`;
+    }
+
+    function formatDate(value) {
+      return new Intl.DateTimeFormat('de-DE', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(new Date(value));
+    }
+
+    function formatBytes(bytes) {
+      const value = Number(bytes || 0);
+      if (!value) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let unitIndex = 0;
+      let current = value;
+      while (current >= 1024 && unitIndex < units.length - 1) {
+        current /= 1024;
+        unitIndex += 1;
+      }
+      return `${current.toFixed(current >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    function isImageLikeFile(file) {
+      if (!file) return false;
+      const mimeType = String(file.type || '').toLowerCase();
+      const fileName = String(file.name || '').toLowerCase();
+      return mimeType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic|heif|avif)$/i.test(fileName);
+    }
+
+    function buildPhotoCard(photo) {
+      const isOwnPhoto = Boolean(photo.isOwn || (photo.device_id && photo.device_id === getDeviceId()) || getOwnPhotoIds().includes(photo.id));
+      const wrapper = document.createElement('article');
+      wrapper.className = 'photo-card';
+      if (isOwnPhoto) wrapper.classList.add('mine');
+      if (adminUnlocked) wrapper.classList.add('admin-mode');
+
+      const thumbnailUrl = `${spaceBasePath}/uploads/${encodeURIComponent(photo.filename)}?thumb=1`;
+      const fullUrl = `${spaceBasePath}/uploads/${encodeURIComponent(photo.filename)}`;
+
+      wrapper.innerHTML = `
+        <img src="${thumbnailUrl}" alt="${photo.original_name || 'Hochzeitsfoto'}" loading="lazy" />
+        <div class="card-overlay"></div>
+        <div class="photo-body">
+          <div class="photo-meta">
+            <span class="comment-pill">${photo.comment ? 'Mit Gruß' : 'Foto'}</span>
+            <span>${formatDate(photo.uploaded_at)}</span>
+          </div>
+          ${photo.comment ? `<div class="photo-comment">${photo.comment}</div>` : ''}
+          ${photo.original_name ? `<div class="photo-filehint">${photo.original_name}</div>` : ''}
+          <div class="action-row photo-actions"></div>
+        </div>
+      `;
+
+      const overlay = wrapper.querySelector('.card-overlay');
+      const actionRow = wrapper.querySelector('.photo-actions');
+
+      const openButton = document.createElement('a');
+      openButton.href = fullUrl;
+      openButton.target = '_blank';
+      openButton.rel = 'noreferrer';
+      openButton.className = 'link-button soft-link';
+      openButton.textContent = 'Original öffnen';
+      actionRow.append(openButton);
+
+      if (isOwnPhoto || adminUnlocked) {
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'delete-btn';
+        deleteButton.textContent = isOwnPhoto ? 'Eigenes Foto löschen' : 'Foto löschen';
+        deleteButton.addEventListener('click', async () => {
+          await deletePhoto(photo.id);
+        });
+        overlay.append(deleteButton);
+      }
+
+      if (adminUnlocked) {
+        const selectLabel = document.createElement('label');
+        selectLabel.className = 'select-chip';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = selectedPhotoIds.has(photo.id);
+        checkbox.addEventListener('change', event => {
+          if (event.target.checked) {
+            selectedPhotoIds.add(photo.id);
+          } else {
+            selectedPhotoIds.delete(photo.id);
+          }
+        });
+        selectLabel.append(checkbox, document.createTextNode(' Auswahl'));
+        overlay.append(selectLabel);
+      }
+
+      if (adminUnlocked && photo.uploader_summary) {
+        const meta = document.createElement('div');
+        meta.className = 'card-admin-meta';
+        meta.textContent = `Uploader: ${photo.uploader_summary}${photo.uploader_ip ? ` · IP ${photo.uploader_ip}` : ''}`;
+        wrapper.querySelector('.photo-body').append(meta);
+      }
+
+      return wrapper;
+    }
+
+    async function loadGallery() {
+      const apiScope = galleryScope === 'archived' ? 'archived' : 'active';
+      const endpoint = adminUnlocked
+        ? `${spaceBasePath}/api/admin/photos?scope=${encodeURIComponent(apiScope)}`
+        : `${spaceBasePath}/api/photos`;
+      const response = await fetch(endpoint, {
+        credentials: 'same-origin',
+        headers: {
+          'X-Device-Id': getDeviceId()
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Galerie konnte nicht geladen werden.');
+      }
+
+      const payload = await response.json();
+      const allPhotos = Array.isArray(payload) ? payload : [];
+      const photos = galleryScope === 'mine'
+        ? allPhotos.filter(photo => Boolean(photo.isOwn || (photo.device_id && photo.device_id === getDeviceId()) || getOwnPhotoIds().includes(photo.id)))
+        : allPhotos;
+      galleryElement.innerHTML = '';
+      selectedPhotoIds = new Set();
+
+      for (const photo of photos) {
+        galleryElement.append(buildPhotoCard(photo));
+      }
+
+      if (!photos.length) {
+        galleryElement.innerHTML = galleryScope === 'archived'
+          ? '<div class="empty-state"><span class="empty-icon">🗂️</span><p>Im Archiv liegen aktuell keine Fotos.</p></div>'
+          : galleryScope === 'mine'
+            ? '<div class="empty-state"><span class="empty-icon">📷</span><p>Auf diesem Gerät wurden noch keine eigenen Uploads gefunden.</p></div>'
+            : '<div class="empty-state"><span class="empty-icon">📸</span><p>Noch keine Fotos. Der erste Upload landet genau hier.</p></div>';
+      }
+
+      galleryMetaElement.textContent = `${photos.length} Foto${photos.length === 1 ? '' : 's'}`;
+      galleryHeadingElement.textContent = galleryScope === 'archived'
+        ? 'Archivierte Fotos'
+        : galleryScope === 'mine'
+          ? 'Meine Bilder'
+          : 'Aktive Fotos';
+      archivedScopeButton.classList.toggle('hidden', !adminUnlocked);
+      restoreSelectedButton.classList.toggle('hidden', galleryScope !== 'archived');
+      deleteSelectedButton.classList.toggle('hidden', galleryScope !== 'archived');
+      archiveSelectedButton.classList.toggle('hidden', !adminUnlocked || galleryScope === 'archived' || galleryScope === 'mine');
+      document.querySelectorAll('.scope-button').forEach(button => {
+        button.classList.toggle('active', button.dataset.scope === galleryScope);
+      });
+    }
+
+    async function loadConfig() {
+      const response = await fetch(`${spaceBasePath}/api/config`, { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('Space-Konfiguration konnte nicht geladen werden.');
+      const config = await response.json();
+      document.title = config.space.displayName;
+      document.getElementById('space-title').textContent = config.space.displayName;
+      uploadHint.textContent = `Galerie oder Dateispeicher oeffnen · mehrere Bilder auf einmal · ${config.uploadLimitLabel || 'Ohne Uploadlimit'}`;
+      uploadLimitBadge.textContent = config.uploadLimitLabel || 'Ohne Uploadlimit';
+      commentInput.maxLength = config.maxCommentLength || __MAX_COMMENT_LENGTH__;
+    }
+
+    async function refreshAdminState() {
+      const response = await fetch(`${spaceBasePath}/api/admin/session`, { credentials: 'same-origin' });
+      adminUnlocked = response.ok;
+      adminLoginCard.classList.toggle('hidden', adminUnlocked);
+      adminToolbar.classList.toggle('hidden', !adminUnlocked);
+      adminLogoutButton.classList.toggle('hidden', !adminUnlocked);
+      archivedScopeButton.classList.toggle('hidden', !adminUnlocked);
+      if (!adminUnlocked) {
+        if (galleryScope === 'archived') {
+          galleryScope = 'active';
+        }
+      }
+    }
+
+    function renderPreview(files) {
+      previewStrip.innerHTML = '';
+      for (const file of files.slice(0, 10)) {
+        const img = document.createElement('img');
+        img.className = 'preview-thumb';
+        img.src = URL.createObjectURL(file);
+        img.onload = () => URL.revokeObjectURL(img.src);
+        previewStrip.append(img);
+      }
+
+      if (files.length > 10) {
+        const more = document.createElement('span');
+        more.className = 'preview-more';
+        more.textContent = `+${files.length - 10} weitere`;
+        previewStrip.append(more);
+      }
+    }
+
+    function handleFiles(files) {
+      if (!files.length) return;
+
+      const validFiles = files.filter(isImageLikeFile);
+      const invalidCount = files.length - validFiles.length;
+      if (!validFiles.length) {
+        pendingFiles = [];
+        previewStrip.innerHTML = '';
+        uploadButton.disabled = true;
+        setStatus(uploadStatusElement, 'Bitte nur Bilddateien auswaehlen.', 'error');
+        return;
+      }
+
+      pendingFiles = validFiles;
+      uploadButton.disabled = false;
+      renderPreview(validFiles);
+      if (invalidCount > 0) {
+        setStatus(uploadStatusElement, `${validFiles.length} Foto${validFiles.length === 1 ? '' : 's'} bereit. ${invalidCount} Datei${invalidCount === 1 ? '' : 'en'} wurde ignoriert, weil sie kein Bild ist.`, 'error');
+        return;
+      }
+
+      setStatus(uploadStatusElement, `${validFiles.length} Foto${validFiles.length === 1 ? '' : 's'} ausgewaehlt.`);
+    }
+
+    function uploadSingleFile(file, index, total) {
+      return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('device_id', getDeviceId());
+        formData.append('comment', commentInput.value.trim());
+        formData.append('uploader_info', JSON.stringify({
+          browser: navigator.userAgent,
+          os: navigator.platform,
+          device: navigator.userAgentData?.platform || navigator.platform,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          platform: navigator.platform,
+          vendor: navigator.vendor,
+          screen: `${window.screen.width}x${window.screen.height}`
+        }));
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${spaceBasePath}/api/upload`);
+        xhr.withCredentials = true;
+        xhr.timeout = 180000;
+
+        xhr.upload.addEventListener('progress', event => {
+          if (!event.lengthComputable) {
+            setStatus(uploadStatusElement, `Upload läuft… (${index + 1}/${total})`);
+            return;
+          }
+
+          const fileProgress = event.total ? event.loaded / event.total : 0;
+          const overallProgress = ((index + fileProgress) / total) * 100;
+          progressBar.style.width = `${Math.max(1, Math.round(overallProgress))}%`;
+          setStatus(
+            uploadStatusElement,
+            `Upload läuft… (${index + 1}/${total}) ${Math.round(fileProgress * 100)}% · ${formatBytes(event.loaded)} von ${formatBytes(event.total)}`
+          );
+        });
+
+        xhr.addEventListener('load', () => {
+          let payload = {};
+          try {
+            payload = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+          } catch {
+            payload = {};
+          }
+
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(payload);
+            return;
+          }
+
+          reject(new Error(payload.error || `Upload fehlgeschlagen (${xhr.status}).`));
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Netzwerkfehler beim Upload. Bitte Verbindung prüfen und erneut versuchen.'));
+        });
+
+        xhr.addEventListener('timeout', () => {
+          reject(new Error('Upload-Zeitlimit erreicht. Bitte erneut versuchen.'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload wurde abgebrochen.'));
+        });
+
+        xhr.send(formData);
+      });
+    }
+
+    async function uploadPhoto() {
+      if (!pendingFiles.length) {
+        setStatus(uploadStatusElement, 'Bitte waehle zuerst mindestens ein Bild aus.', 'error');
+        return;
+      }
+
+      uploadButton.disabled = true;
+      progressWrap.classList.add('show');
+      progressBar.style.width = '0%';
+
+      let uploaded = 0;
+      let failed = 0;
+      const failureMessages = [];
+
+      for (let index = 0; index < pendingFiles.length; index += 1) {
+        const file = pendingFiles[index];
+        setStatus(uploadStatusElement, `Upload laeuft... (${index + 1}/${pendingFiles.length})`);
+
+        try {
+          const payload = await uploadSingleFile(file, index, pendingFiles.length);
+          rememberOwnPhoto(payload.id);
+          uploaded += 1;
+        } catch (error) {
+          failed += 1;
+          const message = `${file.name || `Datei ${index + 1}`}: ${error.message}`;
+          failureMessages.push(message);
+          setStatus(uploadStatusElement, message, 'error');
+          console.error('Upload fehlgeschlagen:', file.name, error);
+        }
+
+        progressBar.style.width = `${Math.round(((index + 1) / pendingFiles.length) * 100)}%`;
+      }
+
+      previewStrip.innerHTML = '';
+      pendingFiles = [];
+      photoInput.value = '';
+      cameraInput.value = '';
+      commentInput.value = '';
+      uploadButton.disabled = true;
+      setTimeout(() => {
+        progressWrap.classList.remove('show');
+      }, 800);
+
+      if (failed === 0) {
+        setStatus(uploadStatusElement, `${uploaded} Foto${uploaded === 1 ? '' : 's'} erfolgreich hochgeladen.`, 'success');
+      } else {
+        const summary = `${uploaded} hochgeladen, ${failed} fehlgeschlagen.`;
+        const detail = failureMessages.length ? ` Grund: ${failureMessages[0]}` : '';
+        setStatus(uploadStatusElement, `${summary}${detail}`, 'error');
+      }
+
+      await loadGallery();
+    }
+
+    async function deletePhoto(photoId) {
+      const response = await fetch(`${spaceBasePath}/api/photos/${encodeURIComponent(photoId)}`, {
+        method: 'DELETE',
+        headers: {
+          'X-Device-Id': getDeviceId()
+        },
+        credentials: 'same-origin'
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(adminStatusElement, payload.error || 'Foto konnte nicht gelöscht werden.', 'error');
+        return;
+      }
+
+      forgetOwnPhoto(photoId);
+      setStatus(adminStatusElement, 'Foto entfernt.', 'success');
+      await loadGallery();
+    }
+
+    async function submitAdminLogin() {
+      setStatus(adminStatusElement, 'Brautpaar-Bereich wird geöffnet…');
+      const response = await fetch(`${spaceBasePath}/api/admin/login`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password: adminPasswordInput.value })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(adminStatusElement, payload.error || 'Anmeldung für den Brautpaar-Bereich fehlgeschlagen.', 'error');
+        return;
+      }
+
+      adminPasswordInput.value = '';
+      await refreshAdminState();
+      await loadGallery();
+      setStatus(adminStatusElement, 'Brautpaar-Bereich aktiv.', 'success');
+    }
+
+    async function logoutAdmin() {
+      await fetch(`${spaceBasePath}/api/admin/logout`, {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
+      await refreshAdminState();
+      await loadGallery();
+      setStatus(adminStatusElement, 'Brautpaar-Bereich wieder gesperrt.', 'success');
+    }
+
+    async function runBatchAction(endpoint, successMessage) {
+      if (!selectedPhotoIds.size) {
+        setStatus(adminStatusElement, 'Bitte markiere zuerst Fotos.', 'error');
+        return;
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: [...selectedPhotoIds] })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setStatus(adminStatusElement, payload.error || 'Aktion fehlgeschlagen.', 'error');
+        return;
+      }
+
+      setStatus(adminStatusElement, successMessage, 'success');
+      await loadGallery();
+    }
+
+    document.querySelectorAll('.scope-button').forEach(button => {
+      button.addEventListener('click', async () => {
+        galleryScope = button.dataset.scope || 'active';
+        await loadGallery();
+      });
+    });
+
+    dropZone.addEventListener('click', event => {
+      if (event.target.closest('button')) return;
+      photoInput.click();
+    });
+    dropZone.addEventListener('dragover', event => {
+      event.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', event => {
+      event.preventDefault();
+      dropZone.classList.remove('drag-over');
+      handleFiles([...event.dataTransfer.files]);
+    });
+    pickGalleryButton.addEventListener('click', () => {
+      photoInput.click();
+    });
+    pickCameraButton.addEventListener('click', () => {
+      cameraInput.click();
+    });
+    photoInput.addEventListener('change', () => handleFiles([...photoInput.files]));
+    cameraInput.addEventListener('change', () => handleFiles([...cameraInput.files]));
+    uploadButton.addEventListener('click', uploadPhoto);
+    adminLoginButton.addEventListener('click', submitAdminLogin);
+    adminLogoutButton.addEventListener('click', logoutAdmin);
+    archiveSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/delete-selected`, 'Auswahl archiviert.'));
+    restoreSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/restore-selected`, 'Auswahl wiederhergestellt.'));
+    deleteSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/delete-archived-selected`, 'Archivierte Auswahl endgültig gelöscht.'));
+    deviceIdValue.textContent = getDeviceId();
+    applyTheme(0);
+
+    Promise.all([loadConfig(), refreshAdminState()])
+      .then(loadGallery)
+      .catch(error => {
+        galleryElement.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><p>${error.message}</p></div>`;
+      });
+  </script>
+</body>
+</html>
