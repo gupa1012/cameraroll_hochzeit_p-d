@@ -15,29 +15,17 @@
       <span class="header-rings">💍</span>
       <span class="eyebrow">Privater Hochzeits-Space</span>
       <h1 id="space-title">__SPACE_NAME__</h1>
-      <p class="space-intro">Teile eure Bilder direkt vom Handy und sammle Erinnerungen an einem Ort. Dieser Bereich ist über euren privaten Link nur fuer eure Gaeste oder den QR-Code erreichbar.</p>
-      <div class="badge-row hero-badges">
-        <span class="badge">Geschützter Zugang</span>
-        <span id="upload-limit-badge" class="badge">__UPLOAD_LIMIT_LABEL__</span>
-        <span class="badge">Kommentar bis __MAX_COMMENT_LENGTH__ Zeichen</span>
-      </div>
-      <div class="mobile-note">📱 Mobile Webapp ohne App-Download · für Gäste direkt im Browser</div>
-      <p id="demo-space-note" class="status-msg muted hidden">Demo-Bereich: Hier koennt ihr den Upload, die Galerie und den Brautpaar-Bereich direkt ausprobieren.</p>
-      <div class="space-highlight-strip" aria-label="Space-Highlights">
-        <span class="space-highlight-chip">QR-Link statt Login</span>
-        <span class="space-highlight-chip">Ohne App fuer Gaeste</span>
-        <span class="space-highlight-chip">Privater Feed fuer den Tag</span>
-      </div>
+      <p class="space-intro">Teile eure Bilder direkt vom Handy und sammle Erinnerungen an einem Ort. Dieser Bereich ist über euren privaten Link nur für eure Gäste oder den QR-Code erreichbar.</p>
     </div>
   </header>
 
   <main class="page-shell">
-    <section class="upload-section split-layout">
+    <section class="upload-section">
       <article id="space-upload-card" class="section-card stack upload-surface-card">
         <div class="section-heading stack compact-stack">
           <span class="eyebrow">Fotos hochladen</span>
           <h2>Momente vom Tag hinzufügen</h2>
-          <p class="muted">Mehrere Bilder gleichzeitig sind moeglich. Originaldateien bleiben unveraendert, die Galerie laedt danach automatisch neu.</p>
+          <p class="muted">Mehrere Bilder gleichzeitig sind möglich. Originaldateien bleiben unverändert, die Galerie lädt danach automatisch neu.</p>
         </div>
 
         <div class="drop-zone" id="drop-zone">
@@ -45,10 +33,10 @@
           <input id="camera-input" class="visually-hidden-input" type="file" accept="image/*" capture="environment" />
           <span class="drop-icon">📸</span>
           <h3>Hier tippen oder Bilder hineinziehen</h3>
-          <p id="upload-hint">Galerie oder Dateispeicher oeffnen · mehrere Bilder auf einmal · __UPLOAD_LIMIT_LABEL__</p>
+          <p id="upload-hint">Galerie oder Dateispeicher öffnen · mehrere Bilder auf einmal</p>
           <div class="picker-actions">
-            <button id="pick-gallery-button" class="upload-btn picker-button" type="button">Aus Galerie oder Dateien waehlen</button>
-            <button id="pick-camera-button" class="refresh-btn picker-button" type="button">Kamera oeffnen</button>
+            <button id="pick-gallery-button" class="upload-btn picker-button" type="button">Aus Galerie oder Dateien wählen</button>
+            <button id="pick-camera-button" class="refresh-btn picker-button" type="button">Kamera öffnen</button>
           </div>
         </div>
 
@@ -70,71 +58,6 @@
 
         <p id="upload-status" class="status-msg muted"></p>
       </article>
-
-      <article class="section-card stack admin-card">
-        <div class="space-topbar">
-          <div>
-            <span class="eyebrow">Brautpaar-Bereich</span>
-            <h2>Geschützter Bereich für dieses Event</h2>
-          </div>
-          <button id="admin-logout-button" class="refresh-btn hidden" type="button">Sperren</button>
-        </div>
-
-        <div id="admin-login-card" class="stack">
-          <p class="muted">Nur für das Brautpaar oder die verantwortliche Person dieses Spaces.</p>
-          <div class="field">
-            <label for="admin-password">Passwort für den Brautpaar-Bereich</label>
-            <input id="admin-password" class="admin-password-input" type="password" placeholder="Passwort eingeben" autocomplete="current-password" />
-          </div>
-          <div class="button-row">
-            <button id="admin-login-button" class="upload-btn" type="button">Brautpaar-Bereich öffnen</button>
-          </div>
-        </div>
-
-        <div id="admin-toolbar" class="stack hidden">
-          <div class="button-row admin-actions-row">
-            <button id="archive-selected-button" class="upload-btn" type="button">Auswahl archivieren</button>
-            <button id="restore-selected-button" class="refresh-btn hidden" type="button">Aus Archiv zurückholen</button>
-            <button id="delete-selected-button" class="refresh-btn hidden" type="button">Archiv endgültig löschen</button>
-          </div>
-
-          <div id="guest-access-tools" class="success-card hidden">
-            <div class="success-grid">
-              <div class="success-block">
-                <span class="success-label">Privater Link nur fuer eure Gaeste</span>
-                <a id="guest-access-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
-                <div class="action-row compact-actions">
-                  <button id="copy-guest-access-button" class="upload-btn" type="button">Link kopieren</button>
-                  <button id="refresh-guest-access-button" class="refresh-btn" type="button">QR-Code neu laden</button>
-                  <button id="print-guest-access-button" class="refresh-btn" type="button">Papeterie-Druckvorlage</button>
-                </div>
-              </div>
-              <div class="success-block qr-block">
-                <span class="success-label">QR-Code fuer eure Gaeste</span>
-                <img id="guest-access-qr-image" class="qr-preview-image" alt="QR-Code fuer den privaten Gastzugang" />
-                <div class="action-row compact-actions">
-                  <a id="download-guest-access-qr-button" class="button secondary" href="#" download="space-qr.png">QR-Code speichern</a>
-                </div>
-              </div>
-              <div class="success-block">
-                <span class="success-label">Export und Sync</span>
-                <p class="muted">Ladet alle Originale als ZIP herunter oder sendet den Export direkt an euren Cloud-Sync.</p>
-                <div class="action-row compact-actions">
-                  <a id="download-export-button" class="button secondary" href="#">ZIP exportieren</a>
-                  <button id="sync-export-button" class="refresh-btn hidden" type="button">Cloud-Sync starten</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <p id="admin-status" class="status-msg muted"></p>
-
-        <div class="device-id-note">
-          <strong>Geräte-ID:</strong>
-          <span id="device-id-value">wird geladen…</span>
-        </div>
-      </article>
     </section>
 
     <section class="gallery-section">
@@ -142,7 +65,7 @@
         <div class="gallery-header-copy">
           <span class="eyebrow">Galerie</span>
           <h2 id="gallery-heading">Hochzeits-Feed</h2>
-          <p class="space-feed-copy">Mehr Bild, weniger Technik. Wie ein privater Social Feed nur fuer eure Feier.</p>
+          <p class="space-feed-copy">Mehr Bild, weniger Technik. Wie ein privater Social Feed nur für eure Feier.</p>
         </div>
         <div class="gallery-header-actions">
           <div class="gallery-tabs show" aria-label="Galerieansicht umschalten">
@@ -154,6 +77,123 @@
         </div>
       </div>
       <div id="gallery" class="gallery-grid space-gallery-grid"></div>
+    </section>
+
+    <section class="space-secondary-area">
+      <details class="section-card space-footer-panel">
+        <summary class="space-footer-summary">
+          <span>Mehr Infos</span>
+          <span class="space-footer-summary-note">QR-Code, Link und Verwaltung</span>
+        </summary>
+
+        <div class="space-footer-content stack">
+          <div id="public-guest-share-card" class="success-card">
+            <div class="success-head">
+              <span class="eyebrow">Space teilen</span>
+              <h3>QR-Code und Link erneut aufrufen</h3>
+              <p class="muted">So können Gäste den Space direkt untereinander weitergeben.</p>
+            </div>
+            <div class="success-grid">
+              <div class="success-block">
+                <span class="success-label">Privater Link für eure Gäste</span>
+                <a id="public-guest-access-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
+                <div class="action-row compact-actions">
+                  <button id="public-copy-guest-access-button" class="upload-btn" type="button">Link kopieren</button>
+                  <button id="public-share-guest-access-button" class="refresh-btn hidden" type="button">Teilen</button>
+                </div>
+              </div>
+              <div class="success-block qr-block">
+                <span class="success-label">QR-Code für eure Gäste</span>
+                <img id="public-guest-access-qr-image" class="qr-preview-image" alt="QR-Code für den privaten Gastzugang" />
+                <div class="action-row compact-actions">
+                  <a id="public-download-guest-access-qr-button" class="button secondary" href="#" download="space-qr.png">QR-Code speichern</a>
+                </div>
+              </div>
+            </div>
+            <p id="public-guest-access-status" class="status-msg muted"></p>
+          </div>
+
+          <div class="space-footer-marketing stack">
+            <div class="badge-row hero-badges">
+              <span class="badge">Geschützter Zugang</span>
+              <span id="upload-limit-badge" class="badge">__UPLOAD_LIMIT_LABEL__</span>
+              <span class="badge">Kommentar bis __MAX_COMMENT_LENGTH__ Zeichen</span>
+            </div>
+            <div class="mobile-note">📱 Mobile Webapp ohne App-Download · für Gäste direkt im Browser</div>
+            <p id="demo-space-note" class="status-msg muted hidden">Demo-Bereich: Hier könnt ihr den Upload, die Galerie und den Brautpaar-Bereich direkt ausprobieren.</p>
+            <div class="space-highlight-strip" aria-label="Space-Highlights">
+              <span class="space-highlight-chip">QR-Link statt Login</span>
+              <span class="space-highlight-chip">Ohne App für Gäste</span>
+              <span class="space-highlight-chip">Privater Feed für den Tag</span>
+            </div>
+          </div>
+
+          <article class="stack admin-card space-admin-footer-card">
+            <div class="space-topbar">
+              <div>
+                <span class="eyebrow">Brautpaar-Bereich</span>
+                <h2>Geschützter Bereich für dieses Event</h2>
+              </div>
+              <button id="admin-logout-button" class="refresh-btn hidden" type="button">Sperren</button>
+            </div>
+
+            <div id="admin-login-card" class="stack">
+              <p class="muted">Nur für das Brautpaar oder die verantwortliche Person dieses Spaces.</p>
+              <div class="field">
+                <label for="admin-password">Passwort für den Brautpaar-Bereich</label>
+                <input id="admin-password" class="admin-password-input" type="password" placeholder="Passwort eingeben" autocomplete="current-password" />
+              </div>
+              <div class="button-row">
+                <button id="admin-login-button" class="upload-btn" type="button">Brautpaar-Bereich öffnen</button>
+              </div>
+            </div>
+
+            <div id="admin-toolbar" class="stack hidden">
+              <div class="button-row admin-actions-row">
+                <button id="archive-selected-button" class="upload-btn" type="button">Auswahl archivieren</button>
+                <button id="restore-selected-button" class="refresh-btn hidden" type="button">Aus Archiv zurückholen</button>
+                <button id="delete-selected-button" class="refresh-btn hidden" type="button">Archiv endgültig löschen</button>
+              </div>
+
+              <div id="guest-access-tools" class="success-card hidden">
+                <div class="success-grid">
+                  <div class="success-block">
+                    <span class="success-label">Privater Link nur für eure Gäste</span>
+                    <a id="guest-access-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
+                    <div class="action-row compact-actions">
+                      <button id="copy-guest-access-button" class="upload-btn" type="button">Link kopieren</button>
+                      <button id="refresh-guest-access-button" class="refresh-btn" type="button">QR-Code neu laden</button>
+                      <button id="print-guest-access-button" class="refresh-btn" type="button">Papeterie-Druckvorlage</button>
+                    </div>
+                  </div>
+                  <div class="success-block qr-block">
+                    <span class="success-label">QR-Code für eure Gäste</span>
+                    <img id="guest-access-qr-image" class="qr-preview-image" alt="QR-Code für den privaten Gastzugang" />
+                    <div class="action-row compact-actions">
+                      <a id="download-guest-access-qr-button" class="button secondary" href="#" download="space-qr.png">QR-Code speichern</a>
+                    </div>
+                  </div>
+                  <div class="success-block">
+                    <span class="success-label">Export und Sync</span>
+                    <p class="muted">Ladet alle Originale als ZIP herunter oder sendet den Export direkt an euren Cloud-Sync.</p>
+                    <div class="action-row compact-actions">
+                      <a id="download-export-button" class="button secondary" href="#">ZIP exportieren</a>
+                      <button id="sync-export-button" class="refresh-btn hidden" type="button">Cloud-Sync starten</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p id="admin-status" class="status-msg muted"></p>
+
+            <div class="device-id-note">
+              <strong>Geräte-ID:</strong>
+              <span id="device-id-value">wird geladen…</span>
+            </div>
+          </article>
+        </div>
+      </details>
     </section>
   </main>
 
@@ -233,6 +273,7 @@
     const archivedScopeButton = document.getElementById('archived-scope-button');
     const uploadStatusElement = document.getElementById('upload-status');
     const adminStatusElement = document.getElementById('admin-status');
+    const publicGuestAccessStatusElement = document.getElementById('public-guest-access-status');
     const uploadButton = document.getElementById('upload-button');
     const photoInput = document.getElementById('photo-input');
     const cameraInput = document.getElementById('camera-input');
@@ -255,6 +296,11 @@
     const restoreSelectedButton = document.getElementById('restore-selected-button');
     const deleteSelectedButton = document.getElementById('delete-selected-button');
     const deviceIdValue = document.getElementById('device-id-value');
+    const publicGuestAccessUrl = document.getElementById('public-guest-access-url');
+    const publicGuestAccessQrImage = document.getElementById('public-guest-access-qr-image');
+    const publicDownloadGuestAccessQrButton = document.getElementById('public-download-guest-access-qr-button');
+    const publicCopyGuestAccessButton = document.getElementById('public-copy-guest-access-button');
+    const publicShareGuestAccessButton = document.getElementById('public-share-guest-access-button');
     const guestAccessTools = document.getElementById('guest-access-tools');
     const guestAccessUrl = document.getElementById('guest-access-url');
     const guestAccessQrImage = document.getElementById('guest-access-qr-image');
@@ -292,7 +338,7 @@
         ].join('-');
       }
 
-      console.warn('crypto.randomUUID ist nicht verfuegbar. Geraete-ID-Fallback wird verwendet.');
+      console.warn('crypto.randomUUID ist nicht verfügbar. Geräte-ID-Fallback wird verwendet.');
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, char => {
         const random = Math.random() * 16 | 0;
         const value = char === 'x' ? random : (random & 0x3 | 0x8);
@@ -347,12 +393,12 @@
       element.className = `status-msg ${kind}`;
     }
 
-    async function copyText(value, successMessage) {
+    async function copyText(value, successMessage, targetElement = adminStatusElement) {
       try {
         await navigator.clipboard.writeText(value);
-        setStatus(adminStatusElement, successMessage, 'success');
+        setStatus(targetElement, successMessage, 'success');
       } catch {
-        setStatus(adminStatusElement, 'Kopieren hat im Browser nicht funktioniert. Bitte kurz manuell kopieren.', 'error');
+        setStatus(targetElement, 'Kopieren hat im Browser nicht funktioniert. Bitte kurz manuell kopieren.', 'error');
       }
     }
 
@@ -415,7 +461,7 @@
       openButton.target = '_blank';
       openButton.rel = 'noreferrer';
       openButton.className = 'link-button soft-link';
-      openButton.textContent = 'Oeffnen';
+      openButton.textContent = 'Öffnen';
       actionRow.append(openButton);
 
       if (isOwnPhoto || adminUnlocked) {
@@ -513,7 +559,7 @@
       const config = await response.json();
       document.title = config.space.displayName;
       document.getElementById('space-title').textContent = config.space.displayName;
-      uploadHint.textContent = `Galerie oder Dateispeicher oeffnen · mehrere Bilder auf einmal · ${config.uploadLimitLabel || 'Originaldatei ohne Uploadlimit'}`;
+      uploadHint.textContent = 'Galerie oder Dateispeicher öffnen · mehrere Bilder auf einmal';
       uploadLimitBadge.textContent = config.uploadLimitLabel || 'Originaldatei ohne Uploadlimit';
       commentInput.maxLength = config.maxCommentLength || __MAX_COMMENT_LENGTH__;
       uploadRequestTimeoutMs = Number.isFinite(config.uploadRequestTimeoutMs) ? config.uploadRequestTimeoutMs : 0;
@@ -545,6 +591,27 @@
       guestAccessQrImage.src = payload.qrCodeDataUrl;
       downloadGuestAccessQrButton.href = payload.qrCodeDataUrl;
       printGuestAccessButton.dataset.printUrl = payload.qrPrintUrl;
+    }
+
+    async function loadPublicGuestAccess() {
+      try {
+        const response = await fetch(`${spaceBasePath}/api/guest-access`, {
+          credentials: 'same-origin'
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || 'Link und QR-Code konnten nicht geladen werden.');
+        }
+
+        publicGuestAccessUrl.href = payload.guestUrl;
+        publicGuestAccessUrl.textContent = payload.guestUrl;
+        publicGuestAccessQrImage.src = payload.qrCodeDataUrl;
+        publicDownloadGuestAccessQrButton.href = payload.qrCodeDataUrl;
+        publicShareGuestAccessButton.classList.toggle('hidden', !navigator.share);
+        setStatus(publicGuestAccessStatusElement, 'Link und QR-Code sind bereit.', 'success');
+      } catch (error) {
+        setStatus(publicGuestAccessStatusElement, error.message, 'error');
+      }
     }
 
     async function refreshAdminState() {
@@ -589,7 +656,7 @@
         pendingFiles = [];
         previewStrip.innerHTML = '';
         uploadButton.disabled = true;
-        setStatus(uploadStatusElement, 'Bitte nur Bilddateien auswaehlen.', 'error');
+        setStatus(uploadStatusElement, 'Bitte nur Bilddateien auswählen.', 'error');
         return;
       }
 
@@ -601,7 +668,7 @@
         return;
       }
 
-      setStatus(uploadStatusElement, `${validFiles.length} Foto${validFiles.length === 1 ? '' : 's'} ausgewaehlt.`);
+      setStatus(uploadStatusElement, `${validFiles.length} Foto${validFiles.length === 1 ? '' : 's'} ausgewählt.`);
     }
 
     function uploadSingleFile(file, index, total) {
@@ -689,7 +756,7 @@
 
       for (let index = 0; index < pendingFiles.length; index += 1) {
         const file = pendingFiles[index];
-        setStatus(uploadStatusElement, `Upload laeuft... (${index + 1}/${pendingFiles.length})`);
+        setStatus(uploadStatusElement, `Upload läuft… (${index + 1}/${pendingFiles.length})`);
 
         try {
           const payload = await uploadSingleFile(file, index, pendingFiles.length);
@@ -819,7 +886,7 @@
         return;
       }
 
-      setStatus(adminStatusElement, `Export erfolgreich an ${payload.remotePath} uebergeben.`, 'success');
+      setStatus(adminStatusElement, `Export erfolgreich an ${payload.remotePath} übergeben.`, 'success');
     }
 
     document.querySelectorAll('.scope-button').forEach(button => {
@@ -860,7 +927,22 @@
     restoreSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/restore-selected`, 'Auswahl wiederhergestellt.'));
     deleteSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/delete-archived-selected`, 'Archivierte Auswahl endgültig gelöscht.'));
     copyGuestAccessButton.addEventListener('click', async () => {
-      await copyText(guestAccessUrl.href, 'Privater Link fuer eure Gaeste kopiert.');
+      await copyText(guestAccessUrl.href, 'Privater Link für eure Gäste kopiert.');
+    });
+    publicCopyGuestAccessButton.addEventListener('click', async () => {
+      await copyText(publicGuestAccessUrl.href, 'Privater Link für eure Gäste kopiert.', publicGuestAccessStatusElement);
+    });
+    publicShareGuestAccessButton.addEventListener('click', async () => {
+      if (!navigator.share || !publicGuestAccessUrl.href || publicGuestAccessUrl.href === '#') return;
+      try {
+        await navigator.share({
+          title: document.title,
+          text: 'Hier ist der private Link für euren Space.',
+          url: publicGuestAccessUrl.href
+        });
+      } catch {
+        // Nutzerabbruch nicht als Fehler behandeln.
+      }
     });
     refreshGuestAccessButton.addEventListener('click', async () => {
       try {
@@ -880,6 +962,7 @@
 
     Promise.all([loadConfig(), refreshAdminState()])
       .then(async () => {
+        await loadPublicGuestAccess();
         if (adminUnlocked) {
           await loadGuestAccessTools();
         }

@@ -166,13 +166,13 @@ function createPrintableQrHtml({ spaceName, guestUrl, qrCodeDataUrl }) {
     <article class="card">
       <span class="eyebrow">Papeterie Vorlage</span>
       <h1>${escapeHtml(spaceName)}</h1>
-      <p>Privater Link nur fuer eure Gaeste. QR-Code scannen, Bilder direkt im Browser hochladen und den gemeinsamen Event-Feed live ansehen.</p>
+      <p>Privater Link nur für eure Gäste. QR-Code scannen, Bilder direkt im Browser hochladen und den gemeinsamen Event-Feed live ansehen.</p>
       <div class="layout">
         <div>
           <div class="link-box">${escapeHtml(guestUrl)}</div>
         </div>
         <div class="qr-box">
-          <img src="${qrCodeDataUrl}" alt="QR-Code fuer den privaten Gastzugang">
+          <img src="${qrCodeDataUrl}" alt="QR-Code für den privaten Gastzugang">
           <strong>Jetzt scannen und hochladen</strong>
         </div>
       </div>
@@ -1039,6 +1039,16 @@ guestRouter.get('/api/photos', (req, res) => {
     isOwn: isValidCurrentDevice && photo.device_id === deviceId
   }));
   res.json(photos);
+});
+
+guestRouter.get('/api/guest-access', async (req, res, next) => {
+  setNoIndex(res);
+
+  try {
+    res.json(await buildSpaceAccessPayload(req));
+  } catch (error) {
+    next(error);
+  }
 });
 
 guestRouter.get('/api/admin/session', (req, res) => {

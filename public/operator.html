@@ -168,7 +168,7 @@
     function renderSecretBox(title, lines, options = {}) {
       secretResult.classList.remove('hidden');
       const qrMarkup = options.qrCodeDataUrl
-        ? `<div class="secret-qr-box"><img class="qr-preview-image" src="${options.qrCodeDataUrl}" alt="QR-Code fuer den privaten Gastlink"><a class="quiet-link" href="${options.qrCodeDataUrl}" download="space-qr.png">QR-Code speichern</a></div>`
+        ? `<div class="secret-qr-box"><img class="qr-preview-image" src="${options.qrCodeDataUrl}" alt="QR-Code für den privaten Gastlink"><a class="quiet-link" href="${options.qrCodeDataUrl}" download="space-qr.png">QR-Code speichern</a></div>`
         : '';
       secretResult.innerHTML = `<div class="secret-box-content"><div><strong>${title}</strong><br>${lines.join('<br>')}</div>${qrMarkup}</div>`;
     }
@@ -266,7 +266,7 @@
         rotateButton.className = 'ghost';
         rotateButton.textContent = 'Privaten Link erneuern';
         rotateButton.addEventListener('click', async () => {
-          if (!confirmDangerousAction(`Privaten Link fuer "${space.displayName}" wirklich erneuern? Der bisherige Link und bestehende QR-Codes verlieren sofort ihre Gueltigkeit.`)) {
+          if (!confirmDangerousAction(`Privaten Link für "${space.displayName}" wirklich erneuern? Der bisherige Link und bestehende QR-Codes verlieren sofort ihre Gültigkeit.`)) {
             return;
           }
           const payload = await operatorPost(`/api/operator/spaces/${encodeURIComponent(space.id)}/rotate-guest-link`);
@@ -283,7 +283,7 @@
         resetAdminButton.className = 'ghost';
         resetAdminButton.textContent = 'Admin-Passwort neu';
         resetAdminButton.addEventListener('click', async () => {
-          if (!confirmDangerousAction(`Admin-Passwort fuer "${space.displayName}" wirklich neu setzen? Bestehende Angaben des Brautpaars werden dadurch sofort ungueltig.`)) {
+          if (!confirmDangerousAction(`Admin-Passwort für "${space.displayName}" wirklich neu setzen? Bestehende Angaben des Brautpaars werden dadurch sofort ungültig.`)) {
             return;
           }
           const payload = await operatorPost(`/api/operator/spaces/${encodeURIComponent(space.id)}/reset-admin-password`);
