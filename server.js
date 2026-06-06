@@ -9,6 +9,7 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
+const convertHeic = require('heic-convert');
 const rateLimit = require('express-rate-limit');
 const QRCode = require('qrcode');
 const archiver = require('archiver');
@@ -195,6 +196,78 @@ function sanitizeFilename(value, fallback = 'space') {
   return normalized || fallback;
 }
 
+function normalizePartnerName(value) {
+  return normalizeDisplayName(value).slice(0, 40);
+}
+
+function normalizeWeddingDate(value) {
+  const rawValue = String(value || '').trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(rawValue);
+  if (!match) return '';
+
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  const parsedDate = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsedDate.getUTCFullYear() !== year ||
+    parsedDate.getUTCMonth() !== month - 1 ||
+    parsedDate.getUTCDate() !== day
+  ) {
+    return '';
+  }
+
+  return `${match[1]}-${match[2]}-${match[3]}`;
+}
+
+function formatWeddingDate(value) {
+  const normalizedDate = normalizeWeddingDate(value);
+  if (!normalizedDate) return '';
+
+  const [year, month, day] = normalizedDate.split('-');
+  return `${day}.${month}.${year}`;
+}
+
+function buildWeddingSpaceName({ partnerOneName, partnerTwoName, weddingDate }) {
+  const firstName = normalizePartnerName(partnerOneName);
+  const secondName = normalizePartnerName(partnerTwoName);
+  const formattedDate = formatWeddingDate(weddingDate);
+
+  if (!firstName || !secondName || !formattedDate) {
+    return '';
+  }
+
+  return normalizeDisplayName(`${firstName} & ${secondName} - ${formattedDate}`);
+}
+
+function extractCoupleLabel(displayName) {
+  const normalizedName = normalizeDisplayName(displayName);
+  const match = /^(?:hochzeit\s+)?(.+?)\s*&\s*(.+?)(?:\s*-\s*.+)?$/i.exec(normalizedName);
+
+  if (!match) {
+    return normalizedName;
+  }
+
+  return `${match[1].trim()} & ${match[2].trim()}`;
+}
+
+function resolveSpaceSetupInput(body = {}) {
+  const partnerOneName = normalizePartnerName(body.partnerOneName);
+  const partnerTwoName = normalizePartnerName(body.partnerTwoName);
+  const weddingDate = normalizeWeddingDate(body.weddingDate);
+  const generatedDisplayName = buildWeddingSpaceName({ partnerOneName, partnerTwoName, weddingDate });
+  const fallbackDisplayName = normalizeDisplayName(body.displayName);
+
+  return {
+    partnerOneName,
+    partnerTwoName,
+    weddingDate,
+    displayName: generatedDisplayName || fallbackDisplayName,
+    usesStructuredNaming: ['partnerOneName', 'partnerTwoName', 'weddingDate'].some(key => body[key] !== undefined)
+  };
+}
+
 function createManifest(space, photos) {
   return JSON.stringify({
     exportedAt: nowIso(),
@@ -288,6 +361,28 @@ function getThumbFilePath(spaceId, filename) {
   return path.join(getSpaceDirectories(spaceId).thumbsDir, `${filename}.webp`);
 }
 
+function getBrowserPreviewPath(spaceId, filename) {
+  return path.join(getSpaceDirectories(spaceId).thumbsDir, `${filename}.preview.jpg`);
+}
+
+function isHeicFilename(filename) {
+  return /\.(heic|heif)$/i.test(String(filename || ''));
+}
+
+async function createImagePipeline(sourcePath, filename) {
+  if (!isHeicFilename(filename)) {
+    return sharp(sourcePath);
+  }
+
+  const sourceBuffer = await fsp.readFile(sourcePath);
+  const convertedBuffer = await convertHeic({
+    buffer: sourceBuffer,
+    format: 'JPEG',
+    quality: 0.9
+  });
+  return sharp(convertedBuffer);
+}
+
 async function ensureThumb(spaceId, filename) {
   const thumbPath = getThumbFilePath(spaceId, filename);
   if (fs.existsSync(thumbPath)) return thumbPath;
@@ -296,7 +391,9 @@ async function ensureThumb(spaceId, filename) {
   if (!fs.existsSync(sourcePath)) return null;
 
   try {
-    await sharp(sourcePath)
+    const image = await createImagePipeline(sourcePath, filename);
+    await image
+      .rotate()
       .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 80 })
       .toFile(thumbPath);
@@ -307,9 +404,35 @@ async function ensureThumb(spaceId, filename) {
   }
 }
 
+async function ensureBrowserPreview(spaceId, filename) {
+  if (!isHeicFilename(filename)) {
+    return getPhotoFilePath(spaceId, filename);
+  }
+
+  const previewPath = getBrowserPreviewPath(spaceId, filename);
+  if (fs.existsSync(previewPath)) return previewPath;
+
+  const sourcePath = getPhotoFilePath(spaceId, filename);
+  if (!fs.existsSync(sourcePath)) return null;
+
+  try {
+    const image = await createImagePipeline(sourcePath, filename);
+    await image
+      .rotate()
+      .resize(2200, 2200, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 88 })
+      .toFile(previewPath);
+    return previewPath;
+  } catch (error) {
+    console.error('Preview error:', error.message);
+    return null;
+  }
+}
+
 function deletePhotoFiles(photo) {
   const filePath = getPhotoFilePath(photo.space_id, photo.filename);
   const thumbPath = getThumbFilePath(photo.space_id, photo.filename);
+  const previewPath = getBrowserPreviewPath(photo.space_id, photo.filename);
 
   fs.unlink(filePath, error => {
     if (error && error.code !== 'ENOENT') {
@@ -320,6 +443,12 @@ function deletePhotoFiles(photo) {
   fs.unlink(thumbPath, error => {
     if (error && error.code !== 'ENOENT') {
       console.error('Thumbnail konnte nicht gelöscht werden:', error.message);
+    }
+  });
+
+  fs.unlink(previewPath, error => {
+    if (error && error.code !== 'ENOENT') {
+      console.error('Vorschaubild konnte nicht gelöscht werden:', error.message);
     }
   });
 }
@@ -874,10 +1003,20 @@ app.get('/api/operator/spaces/:spaceId/uploads/:filename', requireOperator, file
 });
 
 app.post('/api/spaces', operatorMutationLimiter, async (req, res, next) => {
-  const displayName = normalizeDisplayName(req.body?.displayName);
+  const spaceSetup = resolveSpaceSetupInput(req.body);
+  const displayName = spaceSetup.displayName;
   const ownerEmail = normalizeEmail(req.body?.ownerEmail);
   const adminPassword = String(req.body?.adminPassword || '');
 
+  if (spaceSetup.usesStructuredNaming && !spaceSetup.partnerOneName) {
+    return res.status(400).json({ error: 'Bitte gib den ersten Vornamen für euren Space an.' });
+  }
+  if (spaceSetup.usesStructuredNaming && !spaceSetup.partnerTwoName) {
+    return res.status(400).json({ error: 'Bitte gib den zweiten Vornamen für euren Space an.' });
+  }
+  if (spaceSetup.usesStructuredNaming && !spaceSetup.weddingDate) {
+    return res.status(400).json({ error: 'Bitte gib ein gültiges Hochzeitsdatum an.' });
+  }
   if (displayName.length < 3) {
     return res.status(400).json({ error: 'Bitte gib einen aussagekräftigen Namen für euren Space an.' });
   }
@@ -912,10 +1051,20 @@ app.post('/api/spaces', operatorMutationLimiter, async (req, res, next) => {
 app.post('/api/operator/spaces', requireOperator, operatorMutationLimiter, async (req, res, next) => {
   setNoIndex(res);
 
-  const displayName = normalizeDisplayName(req.body?.displayName);
+  const spaceSetup = resolveSpaceSetupInput(req.body);
+  const displayName = spaceSetup.displayName;
   const ownerEmail = normalizeEmail(req.body?.ownerEmail);
   const adminPassword = String(req.body?.adminPassword || '');
 
+  if (spaceSetup.usesStructuredNaming && !spaceSetup.partnerOneName) {
+    return res.status(400).json({ error: 'Bitte gib den ersten Vornamen für den Space an.' });
+  }
+  if (spaceSetup.usesStructuredNaming && !spaceSetup.partnerTwoName) {
+    return res.status(400).json({ error: 'Bitte gib den zweiten Vornamen für den Space an.' });
+  }
+  if (spaceSetup.usesStructuredNaming && !spaceSetup.weddingDate) {
+    return res.status(400).json({ error: 'Bitte gib ein gültiges Hochzeitsdatum an.' });
+  }
   if (displayName.length < 3) {
     return res.status(400).json({ error: 'Bitte gib einen aussagekräftigen Space-Namen an.' });
   }
@@ -1011,6 +1160,7 @@ guestRouter.get('/api/config', (req, res) => {
   res.json({
     space: {
       displayName: req.space.display_name,
+      coupleLabel: extractCoupleLabel(req.space.display_name),
       publicId: req.space.public_id,
       status: req.space.status,
       provisionSource: req.space.provision_source
@@ -1322,6 +1472,11 @@ guestRouter.get('/uploads/:filename', fileLimiter, async (req, res) => {
   if (req.query.thumb === '1') {
     const thumbPath = await ensureThumb(req.space.id, filename);
     if (thumbPath) return res.sendFile(thumbPath);
+  }
+
+  if (req.query.preview === '1') {
+    const previewPath = await ensureBrowserPreview(req.space.id, filename);
+    if (previewPath) return res.sendFile(previewPath);
   }
 
   const filePath = getPhotoFilePath(req.space.id, filename);

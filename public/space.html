@@ -15,7 +15,7 @@
       <span class="header-rings">💍</span>
       <span class="eyebrow">Privater Hochzeits-Space</span>
       <h1 id="space-title">__SPACE_NAME__</h1>
-      <p class="space-intro">Teile eure Bilder direkt vom Handy und sammle Erinnerungen an einem Ort. Dieser Bereich ist über euren privaten Link nur für eure Gäste oder den QR-Code erreichbar.</p>
+      <p class="space-intro">Teile deine Bilder direkt vom Handy und sammle die Erinnerungen des besonderen Tages an einem Ort. Dieser Bereich ist über den privaten Link oder QR-Code nur für die Gäste erreichbar.</p>
     </div>
   </header>
 
@@ -25,7 +25,7 @@
         <div class="section-heading stack compact-stack">
           <span class="eyebrow">Fotos hochladen</span>
           <h2>Momente vom Tag hinzufügen</h2>
-          <p class="muted">Mehrere Bilder gleichzeitig sind möglich. Originaldateien bleiben unverändert, die Galerie lädt danach automatisch neu.</p>
+          <p class="muted">Mehrere Bilder können gleichzeitig hochgeladen werden. Die Originaldateien bleiben unverändert und die Galerie lädt anschließend automatisch neu.</p>
         </div>
 
         <div class="drop-zone" id="drop-zone">
@@ -41,6 +41,12 @@
         </div>
 
         <div id="preview-strip" class="preview-strip"></div>
+
+        <div class="field">
+          <label for="uploader-name-input">Dein Name (optional)</label>
+          <input id="uploader-name-input" type="text" maxlength="80" placeholder="Zum Beispiel: Lisa" autocomplete="name" />
+          <p class="field-help">Wenn du magst, wird dein Name zusammen mit dem Upload gespeichert.</p>
+        </div>
 
         <div class="field">
           <label for="comment-input">Kurzer Gruß oder Bildnotiz</label>
@@ -65,7 +71,7 @@
         <div class="gallery-header-copy">
           <span class="eyebrow">Galerie</span>
           <h2 id="gallery-heading">Hochzeits-Feed</h2>
-          <p class="space-feed-copy">Mehr Bild, weniger Technik. Wie ein privater Social Feed nur für eure Feier.</p>
+          <p id="space-feed-copy" class="space-feed-copy">Der private Social Feed nur für diese Hochzeit.</p>
         </div>
         <div class="gallery-header-actions">
           <div class="gallery-tabs show" aria-label="Galerieansicht umschalten">
@@ -75,6 +81,11 @@
           </div>
           <span id="gallery-meta" class="photo-count">Lädt…</span>
         </div>
+      </div>
+      <div id="gallery-batch-actions" class="gallery-batch-actions hidden">
+        <button id="archive-selected-button" class="upload-btn hidden" type="button">Auswahl archivieren</button>
+        <button id="restore-selected-button" class="refresh-btn hidden" type="button">Aus Archiv zurückholen</button>
+        <button id="delete-selected-button" class="refresh-btn hidden" type="button">Archiv endgültig löschen</button>
       </div>
       <div id="gallery" class="gallery-grid space-gallery-grid"></div>
     </section>
@@ -149,12 +160,6 @@
             </div>
 
             <div id="admin-toolbar" class="stack hidden">
-              <div class="button-row admin-actions-row">
-                <button id="archive-selected-button" class="upload-btn" type="button">Auswahl archivieren</button>
-                <button id="restore-selected-button" class="refresh-btn hidden" type="button">Aus Archiv zurückholen</button>
-                <button id="delete-selected-button" class="refresh-btn hidden" type="button">Archiv endgültig löschen</button>
-              </div>
-
               <div id="guest-access-tools" class="success-card hidden">
                 <div class="success-grid">
                   <div class="success-block">
@@ -209,7 +214,18 @@
     </div>
   </footer>
 
-  <a class="sticky-space-cta" href="#space-upload-card">Foto hochladen</a>
+  <dialog id="photo-detail-dialog" class="photo-detail-dialog">
+    <form method="dialog" class="photo-detail-sheet">
+      <div class="photo-detail-head">
+        <div>
+          <span class="eyebrow">Detailinfos</span>
+          <h3>Fotoübersicht</h3>
+        </div>
+        <button type="submit" class="refresh-btn photo-detail-close">Schließen</button>
+      </div>
+      <div id="photo-detail-content" class="photo-detail-content"></div>
+    </form>
+  </dialog>
 
   <script>
     const THEMES = [
@@ -270,6 +286,8 @@
     const galleryElement = document.getElementById('gallery');
     const galleryMetaElement = document.getElementById('gallery-meta');
     const galleryHeadingElement = document.getElementById('gallery-heading');
+    const galleryBatchActions = document.getElementById('gallery-batch-actions');
+    const spaceFeedCopyElement = document.getElementById('space-feed-copy');
     const archivedScopeButton = document.getElementById('archived-scope-button');
     const uploadStatusElement = document.getElementById('upload-status');
     const adminStatusElement = document.getElementById('admin-status');
@@ -281,6 +299,7 @@
     const pickGalleryButton = document.getElementById('pick-gallery-button');
     const pickCameraButton = document.getElementById('pick-camera-button');
     const previewStrip = document.getElementById('preview-strip');
+    const uploaderNameInput = document.getElementById('uploader-name-input');
     const progressWrap = document.getElementById('progress-wrap');
     const progressBar = document.getElementById('progress-bar');
     const uploadHint = document.getElementById('upload-hint');
@@ -310,6 +329,8 @@
     const printGuestAccessButton = document.getElementById('print-guest-access-button');
     const downloadExportButton = document.getElementById('download-export-button');
     const syncExportButton = document.getElementById('sync-export-button');
+    const photoDetailDialog = document.getElementById('photo-detail-dialog');
+    const photoDetailContent = document.getElementById('photo-detail-content');
 
     let adminUnlocked = false;
     let galleryScope = 'active';
@@ -318,6 +339,10 @@
     let uploadRequestTimeoutMs = 0;
     let exportSyncEnabled = false;
     let exportSyncLabel = 'Cloud-Sync';
+    let activeUploadState = null;
+
+    const MAX_UPLOAD_RETRIES = 2;
+    const UPLOAD_RESUME_CHECK_MS = 12000;
 
     function createDeviceId() {
       if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -422,11 +447,146 @@
       return `${current.toFixed(current >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
     }
 
+    function buildFeedCopy(coupleLabel) {
+      const label = String(coupleLabel || '').trim();
+      return label && label.includes('&')
+        ? `Der private Social Feed nur für die Hochzeit von ${label}`
+        : 'Der private Social Feed nur für diese Hochzeit.';
+    }
+
+    function createUploadError(code, message) {
+      const error = new Error(message);
+      error.code = code;
+      return error;
+    }
+
+    function clearUploadResumeTimer() {
+      if (!activeUploadState?.resumeCheckTimer) return;
+      window.clearTimeout(activeUploadState.resumeCheckTimer);
+      activeUploadState.resumeCheckTimer = null;
+    }
+
+    function updateGalleryBatchActionsVisibility() {
+      if (!galleryBatchActions) return;
+      const hasVisibleButton = [archiveSelectedButton, restoreSelectedButton, deleteSelectedButton]
+        .some(button => !button.classList.contains('hidden'));
+      galleryBatchActions.classList.toggle('hidden', !hasVisibleButton);
+    }
+
+    function closeOpenPhotoMenus() {
+      document.querySelectorAll('.photo-menu[open]').forEach(menu => {
+        menu.removeAttribute('open');
+      });
+    }
+
+    function scheduleUploadResumeCheck() {
+      if (!activeUploadState) return;
+      clearUploadResumeTimer();
+      activeUploadState.resumeCheckTimer = window.setTimeout(() => {
+        if (!activeUploadState?.currentXhr || document.visibilityState === 'hidden') {
+          return;
+        }
+
+        const stalledForMs = Date.now() - (activeUploadState.lastProgressAt || 0);
+        if (stalledForMs < UPLOAD_RESUME_CHECK_MS) {
+          scheduleUploadResumeCheck();
+          return;
+        }
+
+        activeUploadState.resumeRequested = true;
+        setStatus(uploadStatusElement, 'Upload wird nach der Rückkehr erneut angesetzt…');
+        try {
+          activeUploadState.currentXhr.abort();
+        } catch {
+          // Kein weiterer Eingriff nötig, der Upload-Loop behandelt den Retry.
+        }
+      }, UPLOAD_RESUME_CHECK_MS);
+    }
+
+    function shouldRetryUpload(error, uploadState, index) {
+      const retryableCodes = new Set(['network', 'timeout', 'abort', 'resume-retry']);
+      if (!retryableCodes.has(error.code)) {
+        return false;
+      }
+
+      const previousAttempts = uploadState.retryCounts.get(index) || 0;
+      if (previousAttempts >= MAX_UPLOAD_RETRIES) {
+        return false;
+      }
+
+      uploadState.retryCounts.set(index, previousAttempts + 1);
+      const file = uploadState.files[index];
+      setStatus(
+        uploadStatusElement,
+        `${file?.name || `Datei ${index + 1}`} wird erneut versucht (${previousAttempts + 1}/${MAX_UPLOAD_RETRIES})…`
+      );
+      return true;
+    }
+
+    function openPhotoDetails(photo, isOwnPhoto) {
+      const rows = [
+        ['Status', isOwnPhoto ? 'Eigenes Bild' : 'Bild im Space'],
+        ['Hochgeladen', formatDate(photo.uploaded_at)],
+        ['Dateiname', photo.original_name || photo.filename || 'Unbekannt'],
+        ['Dateigröße', formatBytes(photo.size)]
+      ];
+
+      if (photo.comment) {
+        rows.push(['Kommentar', photo.comment]);
+      }
+
+      if (photo.archived_at) {
+        rows.push(['Archiviert am', formatDate(photo.archived_at)]);
+      }
+
+      if (photo.uploader_summary) {
+        rows.push(['Uploader', photo.uploader_summary]);
+      }
+
+      if (photo.uploader_ip) {
+        rows.push(['IP', photo.uploader_ip]);
+      }
+
+      if (!photoDetailDialog || !photoDetailContent || typeof photoDetailDialog.showModal !== 'function') {
+        window.alert(rows.map(([label, value]) => `${label}: ${value}`).join('\n'));
+        return;
+      }
+
+      photoDetailContent.innerHTML = '';
+      const list = document.createElement('dl');
+      list.className = 'photo-detail-list';
+
+      for (const [label, value] of rows) {
+        const row = document.createElement('div');
+        row.className = 'photo-detail-row';
+
+        const term = document.createElement('dt');
+        term.textContent = label;
+
+        const description = document.createElement('dd');
+        description.textContent = value;
+
+        row.append(term, description);
+        list.append(row);
+      }
+
+      photoDetailContent.append(list);
+      photoDetailDialog.showModal();
+    }
+
     function isImageLikeFile(file) {
       if (!file) return false;
       const mimeType = String(file.type || '').toLowerCase();
       const fileName = String(file.name || '').toLowerCase();
       return mimeType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic|heif|avif)$/i.test(fileName);
+    }
+
+    function buildPhotoViewUrl(photo) {
+      const encodedFilename = encodeURIComponent(photo.filename);
+      if (/\.(heic|heif)$/i.test(String(photo.filename || ''))) {
+        return `${spaceBasePath}/uploads/${encodedFilename}?preview=1`;
+      }
+      return `${spaceBasePath}/uploads/${encodedFilename}`;
     }
 
     function buildPhotoCard(photo) {
@@ -437,45 +597,60 @@
       if (adminUnlocked) wrapper.classList.add('admin-mode');
 
       const thumbnailUrl = `${spaceBasePath}/uploads/${encodeURIComponent(photo.filename)}?thumb=1`;
-      const fullUrl = `${spaceBasePath}/uploads/${encodeURIComponent(photo.filename)}`;
+      const fullUrl = buildPhotoViewUrl(photo);
 
-      wrapper.innerHTML = `
-        <img src="${thumbnailUrl}" alt="${photo.original_name || 'Hochzeitsfoto'}" loading="lazy" />
-        <div class="card-overlay"></div>
-        <div class="photo-body">
-          <div class="photo-meta">
-            <span class="comment-pill">${photo.comment ? 'Mit Gruß' : 'Foto'}</span>
-            <span>${formatDate(photo.uploaded_at)}</span>
-          </div>
-          ${photo.comment ? `<div class="photo-comment">${photo.comment}</div>` : ''}
-          ${photo.original_name ? `<div class="photo-filehint">${photo.original_name}</div>` : ''}
-          <div class="action-row photo-actions"></div>
-        </div>
-      `;
+      const imageLink = document.createElement('a');
+      imageLink.href = fullUrl;
+      imageLink.target = '_blank';
+      imageLink.rel = 'noreferrer';
+      imageLink.className = 'photo-image-link';
 
-      const overlay = wrapper.querySelector('.card-overlay');
-      const actionRow = wrapper.querySelector('.photo-actions');
+      const image = document.createElement('img');
+      image.src = thumbnailUrl;
+      image.alt = photo.original_name || 'Hochzeitsfoto';
+      image.loading = 'lazy';
+      imageLink.append(image);
 
-      const openButton = document.createElement('a');
-      openButton.href = fullUrl;
-      openButton.target = '_blank';
-      openButton.rel = 'noreferrer';
-      openButton.className = 'link-button soft-link';
-      openButton.textContent = 'Öffnen';
-      actionRow.append(openButton);
+      const menu = document.createElement('details');
+      menu.className = 'photo-menu';
+
+      const menuSummary = document.createElement('summary');
+      menuSummary.className = 'photo-menu-trigger';
+      menuSummary.setAttribute('aria-label', 'Aktionen für dieses Foto');
+      menuSummary.innerHTML = '<span aria-hidden="true">...</span>';
+      menu.append(menuSummary);
+
+      const menuList = document.createElement('div');
+      menuList.className = 'photo-menu-list';
+
+      const detailsButton = document.createElement('button');
+      detailsButton.type = 'button';
+      detailsButton.className = 'photo-menu-item';
+      detailsButton.textContent = 'Detailinfos anzeigen';
+      detailsButton.addEventListener('click', () => {
+        menu.removeAttribute('open');
+        openPhotoDetails(photo, isOwnPhoto);
+      });
+      menuList.append(detailsButton);
 
       if (isOwnPhoto || adminUnlocked) {
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
-        deleteButton.className = 'delete-btn';
-        deleteButton.textContent = isOwnPhoto ? 'Eigenes Foto löschen' : 'Foto löschen';
+        deleteButton.className = 'photo-menu-item danger';
+        deleteButton.textContent = isOwnPhoto ? 'Eigenes Bild löschen' : 'Foto löschen';
         deleteButton.addEventListener('click', async () => {
+          menu.removeAttribute('open');
           await deletePhoto(photo.id);
         });
-        overlay.append(deleteButton);
+        menuList.append(deleteButton);
       }
 
+      menu.append(menuList);
+
       if (adminUnlocked) {
+        const adminTools = document.createElement('div');
+        adminTools.className = 'photo-admin-tools';
+
         const selectLabel = document.createElement('label');
         selectLabel.className = 'select-chip';
         const checkbox = document.createElement('input');
@@ -489,15 +664,12 @@
           }
         });
         selectLabel.append(checkbox, document.createTextNode(' Auswahl'));
-        overlay.append(selectLabel);
+        adminTools.append(selectLabel);
+
+        wrapper.append(adminTools);
       }
 
-      if (adminUnlocked && photo.uploader_summary) {
-        const meta = document.createElement('div');
-        meta.className = 'card-admin-meta';
-        meta.textContent = `Uploader: ${photo.uploader_summary}${photo.uploader_ip ? ` · IP ${photo.uploader_ip}` : ''}`;
-        wrapper.querySelector('.photo-body').append(meta);
-      }
+      wrapper.append(imageLink, menu);
 
       return wrapper;
     }
@@ -548,6 +720,7 @@
       restoreSelectedButton.classList.toggle('hidden', galleryScope !== 'archived');
       deleteSelectedButton.classList.toggle('hidden', galleryScope !== 'archived');
       archiveSelectedButton.classList.toggle('hidden', !adminUnlocked || galleryScope === 'archived' || galleryScope === 'mine');
+      updateGalleryBatchActionsVisibility();
       document.querySelectorAll('.scope-button').forEach(button => {
         button.classList.toggle('active', button.dataset.scope === galleryScope);
       });
@@ -559,6 +732,7 @@
       const config = await response.json();
       document.title = config.space.displayName;
       document.getElementById('space-title').textContent = config.space.displayName;
+      spaceFeedCopyElement.textContent = buildFeedCopy(config.space.coupleLabel || config.space.displayName);
       uploadHint.textContent = 'Galerie oder Dateispeicher öffnen · mehrere Bilder auf einmal';
       uploadLimitBadge.textContent = config.uploadLimitLabel || 'Originaldatei ohne Uploadlimit';
       commentInput.maxLength = config.maxCommentLength || __MAX_COMMENT_LENGTH__;
@@ -627,6 +801,7 @@
           galleryScope = 'active';
         }
       }
+      updateGalleryBatchActionsVisibility();
     }
 
     function renderPreview(files) {
@@ -671,13 +846,14 @@
       setStatus(uploadStatusElement, `${validFiles.length} Foto${validFiles.length === 1 ? '' : 's'} ausgewählt.`);
     }
 
-    function uploadSingleFile(file, index, total) {
+    function uploadSingleFile(file, index, total, uploadState) {
       return new Promise((resolve, reject) => {
         const formData = new FormData();
         formData.append('photo', file);
         formData.append('device_id', getDeviceId());
-        formData.append('comment', commentInput.value.trim());
+        formData.append('comment', uploadState.comment);
         formData.append('uploader_info', JSON.stringify({
+          name: uploaderNameInput.value.trim(),
           browser: navigator.userAgent,
           os: navigator.platform,
           device: navigator.userAgentData?.platform || navigator.platform,
@@ -692,8 +868,15 @@
         xhr.open('POST', `${spaceBasePath}/api/upload`);
         xhr.withCredentials = true;
         xhr.timeout = uploadRequestTimeoutMs;
+        uploadState.currentXhr = xhr;
+        uploadState.currentIndex = index;
+        uploadState.lastProgressAt = Date.now();
+        uploadState.resumeRequested = false;
+        scheduleUploadResumeCheck();
 
         xhr.upload.addEventListener('progress', event => {
+          uploadState.lastProgressAt = Date.now();
+          scheduleUploadResumeCheck();
           if (!event.lengthComputable) {
             setStatus(uploadStatusElement, `Upload läuft… (${index + 1}/${total})`);
             return;
@@ -709,6 +892,8 @@
         });
 
         xhr.addEventListener('load', () => {
+          clearUploadResumeTimer();
+          uploadState.currentXhr = null;
           let payload = {};
           try {
             payload = xhr.responseText ? JSON.parse(xhr.responseText) : {};
@@ -725,15 +910,24 @@
         });
 
         xhr.addEventListener('error', () => {
-          reject(new Error('Netzwerkfehler beim Upload. Bitte Verbindung prüfen und erneut versuchen.'));
+          clearUploadResumeTimer();
+          uploadState.currentXhr = null;
+          reject(createUploadError('network', 'Netzwerkfehler beim Upload. Bitte Verbindung prüfen und erneut versuchen.'));
         });
 
         xhr.addEventListener('timeout', () => {
-          reject(new Error('Upload-Zeitlimit erreicht. Bitte erneut versuchen.'));
+          clearUploadResumeTimer();
+          uploadState.currentXhr = null;
+          reject(createUploadError('timeout', 'Upload-Zeitlimit erreicht. Bitte erneut versuchen.'));
         });
 
         xhr.addEventListener('abort', () => {
-          reject(new Error('Upload wurde abgebrochen.'));
+          clearUploadResumeTimer();
+          uploadState.currentXhr = null;
+          reject(createUploadError(
+            uploadState.resumeRequested ? 'resume-retry' : 'abort',
+            uploadState.resumeRequested ? 'Upload wird nach Rückkehr erneut angesetzt.' : 'Upload wurde abgebrochen.'
+          ));
         });
 
         xhr.send(formData);
@@ -746,6 +940,24 @@
         return;
       }
 
+      if (activeUploadState) {
+        setStatus(uploadStatusElement, 'Ein Upload läuft bereits.', 'error');
+        return;
+      }
+
+      const filesToUpload = [...pendingFiles];
+      activeUploadState = {
+        files: filesToUpload,
+        total: filesToUpload.length,
+        comment: commentInput.value.trim(),
+        currentIndex: 0,
+        currentXhr: null,
+        lastProgressAt: Date.now(),
+        resumeRequested: false,
+        retryCounts: new Map(),
+        resumeCheckTimer: null
+      };
+
       uploadButton.disabled = true;
       progressWrap.classList.add('show');
       progressBar.style.width = '0%';
@@ -754,23 +966,36 @@
       let failed = 0;
       const failureMessages = [];
 
-      for (let index = 0; index < pendingFiles.length; index += 1) {
-        const file = pendingFiles[index];
-        setStatus(uploadStatusElement, `Upload läuft… (${index + 1}/${pendingFiles.length})`);
+      try {
+        while (activeUploadState.currentIndex < activeUploadState.total) {
+          const index = activeUploadState.currentIndex;
+          const file = activeUploadState.files[index];
+          setStatus(uploadStatusElement, `Upload läuft… (${index + 1}/${activeUploadState.total})`);
 
-        try {
-          const payload = await uploadSingleFile(file, index, pendingFiles.length);
-          rememberOwnPhoto(payload.id);
-          uploaded += 1;
-        } catch (error) {
-          failed += 1;
-          const message = `${file.name || `Datei ${index + 1}`}: ${error.message}`;
-          failureMessages.push(message);
-          setStatus(uploadStatusElement, message, 'error');
-          console.error('Upload fehlgeschlagen:', file.name, error);
+          try {
+            const payload = await uploadSingleFile(file, index, activeUploadState.total, activeUploadState);
+            rememberOwnPhoto(payload.id);
+            uploaded += 1;
+            activeUploadState.retryCounts.delete(index);
+            activeUploadState.currentIndex += 1;
+          } catch (error) {
+            if (shouldRetryUpload(error, activeUploadState, index)) {
+              continue;
+            }
+
+            failed += 1;
+            activeUploadState.currentIndex += 1;
+            const message = `${file.name || `Datei ${index + 1}`}: ${error.message}`;
+            failureMessages.push(message);
+            setStatus(uploadStatusElement, message, 'error');
+            console.error('Upload fehlgeschlagen:', file.name, error);
+          }
+
+          progressBar.style.width = `${Math.round((activeUploadState.currentIndex / activeUploadState.total) * 100)}%`;
         }
-
-        progressBar.style.width = `${Math.round(((index + 1) / pendingFiles.length) * 100)}%`;
+      } finally {
+        clearUploadResumeTimer();
+        activeUploadState = null;
       }
 
       previewStrip.innerHTML = '';
@@ -971,6 +1196,31 @@
       .catch(error => {
         galleryElement.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><p>${error.message}</p></div>`;
       });
+
+    document.addEventListener('click', event => {
+      if (event.target.closest('.photo-menu')) return;
+      closeOpenPhotoMenus();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!activeUploadState) return;
+
+      if (document.visibilityState === 'hidden') {
+        setStatus(
+          uploadStatusElement,
+          'Upload bleibt aktiv, solange der mobile Browser ihn im Hintergrund nicht stoppt. Nach der Rückkehr wird notfalls automatisch erneut versucht.'
+        );
+        return;
+      }
+
+      scheduleUploadResumeCheck();
+    });
+
+    window.addEventListener('beforeunload', event => {
+      if (!activeUploadState) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
   </script>
 </body>
 </html>

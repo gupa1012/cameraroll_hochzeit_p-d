@@ -40,10 +40,18 @@
           <article id="space-anlegen" class="hero-form panel stack">
             <span class="eyebrow">Hochzeit anlegen</span>
             <h2>Euren Space jetzt vorbereiten</h2>
-            <p class="muted">Feiername, E-Mail-Adresse und euer eigenes Passwort reichen für den Start. Danach bekommt ihr sofort euren privaten Link nur für eure Gäste inklusive QR-Code.</p>
+            <p class="muted">Namen, Datum, E-Mail-Adresse und euer eigenes Passwort reichen für den Start. Danach bekommt ihr sofort euren privaten Link nur für eure Gäste inklusive QR-Code.</p>
             <div class="field">
-              <label for="display-name">Name eures Spaces</label>
-              <input id="display-name" type="text" placeholder="z. B. Hochzeit Lea & Moritz" />
+              <label for="partner-one-name">Erster Vorname</label>
+              <input id="partner-one-name" type="text" placeholder="z. B. Desirée" />
+            </div>
+            <div class="field">
+              <label for="partner-two-name">Zweiter Vorname</label>
+              <input id="partner-two-name" type="text" placeholder="z. B. Patrick" />
+            </div>
+            <div class="field">
+              <label for="wedding-date">Hochzeitsdatum</label>
+              <input id="wedding-date" type="date" />
             </div>
             <div class="field">
               <label for="owner-email">E-Mail-Adresse</label>
@@ -57,6 +65,7 @@
               <button id="create-space-button" class="primary" type="button">Space anlegen</button>
               <a class="button ghost" href="/demo" target="_blank" rel="noreferrer">Direkt Demo starten</a>
             </div>
+            <p class="subtle-note">Der Space-Name wird automatisch als Name 1 &amp; Name 2 - Datum erstellt.</p>
             <p id="create-space-status" class="status muted"></p>
             <div class="trust-mini-grid">
               <div class="mini-trust-item">Ohne App für Gäste</div>
@@ -243,7 +252,9 @@
     const createSpaceButton = document.getElementById('create-space-button');
     const createSpaceStatus = document.getElementById('create-space-status');
     const createSpaceResult = document.getElementById('create-space-result');
-    const displayNameInput = document.getElementById('display-name');
+    const partnerOneNameInput = document.getElementById('partner-one-name');
+    const partnerTwoNameInput = document.getElementById('partner-two-name');
+    const weddingDateInput = document.getElementById('wedding-date');
     const ownerEmailInput = document.getElementById('owner-email');
     const adminPasswordSetupInput = document.getElementById('admin-password-setup');
     const resultGuestUrl = document.getElementById('result-guest-url');
@@ -274,13 +285,27 @@
     }
 
     function validateInputs() {
-      const displayName = displayNameInput.value.trim();
+      const partnerOneName = partnerOneNameInput.value.trim();
+      const partnerTwoName = partnerTwoNameInput.value.trim();
+      const weddingDate = weddingDateInput.value;
       const ownerEmail = ownerEmailInput.value.trim();
       const adminPassword = adminPasswordSetupInput.value;
 
-      if (displayName.length < 3) {
-        setStatus('Bitte gebt einen aussagekräftigen Namen für euren Space an.', 'error');
-        displayNameInput.focus();
+      if (partnerOneName.length < 2) {
+        setStatus('Bitte gebt den ersten Vornamen für euren Space an.', 'error');
+        partnerOneNameInput.focus();
+        return null;
+      }
+
+      if (partnerTwoName.length < 2) {
+        setStatus('Bitte gebt den zweiten Vornamen für euren Space an.', 'error');
+        partnerTwoNameInput.focus();
+        return null;
+      }
+
+      if (!weddingDate) {
+        setStatus('Bitte wählt euer Hochzeitsdatum aus.', 'error');
+        weddingDateInput.focus();
         return null;
       }
 
@@ -296,7 +321,7 @@
         return null;
       }
 
-      return { displayName, ownerEmail, adminPassword };
+      return { partnerOneName, partnerTwoName, weddingDate, ownerEmail, adminPassword };
     }
 
     function renderSuccess(payload) {
@@ -333,7 +358,7 @@
         }
 
         renderSuccess(payload);
-        setStatus('Space erfolgreich angelegt.', 'success');
+        setStatus(`Space erfolgreich angelegt: ${payload.displayName}.`, 'success');
       } catch (error) {
         setStatus(error.message, 'error');
       } finally {

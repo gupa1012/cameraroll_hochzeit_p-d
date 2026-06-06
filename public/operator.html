@@ -48,8 +48,16 @@
           <span class="eyebrow">Neuen Space anlegen</span>
           <h2>Neuen Event vorbereiten</h2>
           <div class="field">
-            <label for="space-display-name">Space-Name</label>
-            <input id="space-display-name" type="text" placeholder="z. B. Hochzeit Anna & Jonas" />
+            <label for="space-partner-one-name">Erster Vorname</label>
+            <input id="space-partner-one-name" type="text" placeholder="z. B. Desirée" />
+          </div>
+          <div class="field">
+            <label for="space-partner-two-name">Zweiter Vorname</label>
+            <input id="space-partner-two-name" type="text" placeholder="z. B. Patrick" />
+          </div>
+          <div class="field">
+            <label for="space-wedding-date">Hochzeitsdatum</label>
+            <input id="space-wedding-date" type="date" />
           </div>
           <div class="field">
             <label for="space-owner-email">Eigentümer-E-Mail</label>
@@ -62,6 +70,7 @@
           <div class="action-row">
             <button id="create-space-button" class="primary" type="button">Space anlegen</button>
           </div>
+          <p class="muted">Der Space-Name wird automatisch als Name 1 &amp; Name 2 - Datum gespeichert.</p>
           <p id="create-space-status" class="status muted"></p>
           <div id="secret-result" class="secret-box hidden"></div>
         </article>
@@ -317,17 +326,22 @@
     async function createSpace() {
       setStatus(createSpaceStatus, 'Space wird angelegt…');
       const payload = await operatorPost('/api/operator/spaces', {
-        displayName: document.getElementById('space-display-name').value,
+        partnerOneName: document.getElementById('space-partner-one-name').value,
+        partnerTwoName: document.getElementById('space-partner-two-name').value,
+        weddingDate: document.getElementById('space-wedding-date').value,
         ownerEmail: document.getElementById('space-owner-email').value,
         adminPassword: document.getElementById('space-admin-password').value
       });
       if (!payload) return;
 
-      document.getElementById('space-display-name').value = '';
+      document.getElementById('space-partner-one-name').value = '';
+      document.getElementById('space-partner-two-name').value = '';
+      document.getElementById('space-wedding-date').value = '';
       document.getElementById('space-owner-email').value = '';
       document.getElementById('space-admin-password').value = '';
-      setStatus(createSpaceStatus, 'Space erfolgreich angelegt.', 'success');
+      setStatus(createSpaceStatus, `Space erfolgreich angelegt: ${payload.space.displayName}.`, 'success');
       renderSecretBox('Neuer Space', [
+        `Space-Name: <strong>${escapeHtml(payload.space.displayName)}</strong>`,
         `Privater Link: <a href="${payload.guestUrl}" target="_blank" rel="noreferrer">${payload.guestUrl}</a>`,
         `Admin-Passwort: <code>${payload.adminPassword}</code>`
       ], {

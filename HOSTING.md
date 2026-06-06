@@ -1,185 +1,114 @@
-# 🎊 Hochzeits-Galerie – Hosting-Anleitung
+# Hochzeits-Galerie - Hosting auf Hetzner
 
-Schritt-für-Schritt: Die Galerie live bringen – günstig, einfach, ohne Datenverlust.
+Diese Datei ist ab jetzt nur noch die Arbeitsgrundlage fuer Hetzner-Server.
+Andere Hoster, generische Alternativen und manuelle Einzelschritte sind bewusst entfernt.
+Der Standardfall ist: frischer Hetzner-Server, Einrichtung ueber Copilot, danach Betrieb ueber denselben Ablauf.
 
----
+Fuer den laufenden Betrieb nach dem Bootstrap gilt:
 
-## Option A: Hetzner VPS (empfohlen) 🏆
+- SSH-, Deploy-, Backup- und Restore-Ablaufe stehen in `docs/ops.md`.
+- Architektur- und Laufzeitfakten stehen in `docs/architecture.md` und `README.md`.
 
-**Kosten:** ab €3,29/Monat | **Daten:** immer sicher | **Aufwand:** ~20 Min.
+## Zielbild
 
-Hetzner ist ein deutsches Unternehmen (DSGVO-konform), super günstig und zuverlässig.
-Alle Bilder liegen auf deinem Server und gehen nie verloren.
+- Hetzner Cloud VPS mit Ubuntu 24.04
+- App unter `/var/www/hochzeit`
+- Nginx als Reverse Proxy vor `127.0.0.1:3000`
+- PM2-Service `pm2-hochzeit`
+- Linux-App-User `hochzeit`
+- SSH-Admin-User `patgs`
+- Daten in `data/` und `storage/`
+- Betreiber-Passwort in `/var/www/hochzeit/.env`
 
-### Schnellster Weg: Einmal Skript ausführen
+## Wichtige Vorgabe fuer Neuaufbau
 
-Wenn du es maximal einfach willst, nutze direkt das Setup-Skript aus diesem Repo.
+Beim Neuaufsetzen fragt Copilot das Betreiber-Passwort immer aktiv ab.
+Es wird bewusst nicht automatisch als lange Zufallszeichenfolge erzeugt.
+Die App erwartet diesen Wert in `OPERATOR_PASSWORD`.
 
-Auf dem frischen Ubuntu-Server nur diese Befehle ausführen:
+## Rebuild-Ablauf ueber Copilot
 
-```bash
-ssh root@<deine-ip>
-git clone https://github.com/gupa1012/cameraroll_hochzeit_p-d /root/hochzeit-setup
-cd /root/hochzeit-setup
-chmod +x setup-server.sh
-sudo ./setup-server.sh
-```
+Copilot fuehrt den kompletten Serveraufbau direkt auf dem Hetzner-Server aus.
+Die Standardreihenfolge ist:
 
-Das Skript fragt dich Schritt fuer Schritt nach:
+1. SSH-Zugang mit vorhandenem Key herstellen.
+2. Basispakete, Node.js 22, Nginx und PM2 installieren.
+3. Repo nach `/var/www/hochzeit` bringen.
+4. `.env` und `start-hochzeit.sh` schreiben.
+5. App-User `hochzeit` anlegen und Besitzrechte setzen.
+6. App mit PM2 als `hochzeit` starten.
+7. Nginx als IP-Bootstrap auf Port 80 vorschalten.
+8. SSH haerten, Updates einspielen, rebooten und validieren.
 
-- Zielverzeichnis der App
-- Port
-- Domain
-- optional `www`
-- E-Mail fuer Let's Encrypt
+## Eingaben, die Copilot beim Rebuild einholen soll
 
-Und erledigt dann automatisch:
+- Server-IP
+- SSH-Key-Pfad
+- gewuenschtes `OPERATOR_PASSWORD`
+- optional spaeter: Domain und Let's-Encrypt-E-Mail fuer HTTPS
 
-- Systempakete installieren
-- Node.js 22 installieren
-- PM2 installieren
-- Repo kopieren oder klonen
-- `npm install`
-- Nginx konfigurieren
-- PM2-Start einrichten
-- optional HTTPS per Certbot
+## Verifizierter Hetzner-Stand
 
-Wenn du diesen Weg nutzt, kannst du die meisten manuellen Schritte weiter unten ueberspringen.
+Der aktuell verifizierte Aufbau sieht so aus:
 
----
+- App-Verzeichnis: `/var/www/hochzeit`
+- App-User: `hochzeit`
+- SSH-Admin: `patgs`
+- PM2-Dienst: `pm2-hochzeit`
+- Nginx-Serverblock: `default_server` auf Port 80
+- Proxy-Ziel: `http://127.0.0.1:3000`
+- `.env`: Modus `600`, Besitzer `hochzeit:hochzeit`
+- `start-hochzeit.sh`: Modus `750`, Besitzer `hochzeit:hochzeit`
+- Root-SSH deaktiviert
+- Passwort-Login per SSH deaktiviert
 
-### 1. Server bestellen
+## Erwartete Konfigurationsdateien auf dem Server
 
-1. Account anlegen auf [hetzner.com](https://www.hetzner.com/cloud)
-2. **New Server** klicken
-   - Location: **Nuremberg** oder **Falkenstein**
-   - Image: **Ubuntu 24.04**
-   - Type: **CX22** (2 vCPU, 4 GB RAM) – reicht locker aus
-   - SSH-Key: einen neuen hinzufügen (oder Passwort aktivieren)
-3. Server erstellen → IP-Adresse notieren
+### `/var/www/hochzeit/.env`
 
----
+Minimaler Stand fuer den IP-Bootstrap:
 
-### 2. Domain (optional, aber schön)
-
-Auf [namecheap.com](https://www.namecheap.com) oder direkt bei [Hetzner](https://www.hetzner.com/domainregistration) eine Domain kaufen (z. B. `eure-hochzeit.de`, ~€10/Jahr).
-
-> **Wichtig:** Ersetze `eure-hochzeit.de` in allen folgenden Beispielen immer durch deine echte Domain.
-
-DNS-Eintrag setzen:
-```
-A  @  →  <deine-hetzner-ip>
-```
-
----
-
-### 3. Server einrichten
-
-Per SSH verbinden:
-```bash
-ssh root@<deine-ip>
-```
-
-Einfachster Weg:
-```bash
-git clone https://github.com/gupa1012/cameraroll_hochzeit_p-d /root/hochzeit-setup
-cd /root/hochzeit-setup
-chmod +x setup-server.sh
-sudo ./setup-server.sh
-```
-
-Nur wenn du alles manuell machen willst, folgen die Einzelschritte darunter.
-
-Node.js installieren:
-```bash
-# Script zuerst herunterladen und kurz prüfen, bevor du es ausführst
-curl -fsSLo /tmp/nodesource_setup.sh https://deb.nodesource.com/setup_22.x
-less /tmp/nodesource_setup.sh
-# wenn NodeSource später Prüfsummen oder Signaturen bereitstellt, diese zusätzlich prüfen
-bash /tmp/nodesource_setup.sh
-apt-get install -y nodejs
-```
-
-PM2 (Prozess-Manager – App startet automatisch nach Reboot):
-```bash
-npm install -g pm2
-```
-
-Nginx (als Reverse-Proxy für HTTPS):
-```bash
-apt install -y nginx certbot python3-certbot-nginx
-```
-
----
-
-### 4. App hochladen
-
-Auf deinem lokalen Computer (im Projekt-Ordner):
-```bash
-# Alle Dateien auf den Server kopieren (ohne node_modules)
-scp -r . root@<deine-ip>:/var/www/hochzeit
-```
-
-Oder via Git (empfohlen):
-```bash
-# Auf dem Server:
-git clone https://github.com/gupa1012/cameraroll_hochzeit_p-d /var/www/hochzeit
-```
-
----
-
-### 5. Dependencies installieren & App starten
-
-Wenn du das Skript verwendet hast, ist dieser Schritt bereits erledigt.
-
-```bash
-cd /var/www/hochzeit
-npm install
-pm2 start server.js --name "hochzeit" -- 
-pm2 save
-pm2 startup   # zeigt einen Befehl an, den du ausführen musst
-```
-
-Admin-Passwort am besten mit `.env`-Datei setzen (damit es nicht in Shell-History oder Prozesslisten landet):
-```bash
-cat > /var/www/hochzeit/.env << 'EOF'
+```env
 PORT=3000
-OPERATOR_PASSWORD=mein-geheimes-passwort-hier
+HOST=127.0.0.1
+OPERATOR_PASSWORD=<vom-user-abgefragt>
 UPLOAD_REQUEST_TIMEOUT_MS=0
 EXPORT_SYNC_LABEL=Google Drive
-EOF
 ```
 
-Hinweis:
-Das Betreiber-Passwort wird bereits aus `OPERATOR_PASSWORD` gelesen. Fuer unbegrenzte Original-Uploads `MAX_FILE_MB` einfach nicht setzen.
-Das Brautpaar setzt sein eigenes Passwort bereits beim Anlegen des Spaces direkt selbst.
+Hinweise:
 
-Dann `server.js` so starten:
-```bash
-pm2 start server.js --name "hochzeit"
-```
+- `OPERATOR_PASSWORD` wird immer beim Neuaufbau vom Nutzer festgelegt.
+- `MAX_FILE_MB` bleibt ungesetzt, wenn Originaldateien ohne Uploadlimit erlaubt sein sollen.
+- `TRUST_PROXY=1` wird erst gesetzt, sobald der Reverse-Proxy dauerhaft finalisiert ist.
 
----
+### `/var/www/hochzeit/start-hochzeit.sh`
 
-### 6. Nginx konfigurieren
-
-Wenn du das Skript verwendet hast, ist auch dieser Schritt bereits erledigt.
+Das Startskript laedt `.env` und startet danach die App:
 
 ```bash
-nano /etc/nginx/sites-available/hochzeit
+#!/usr/bin/env bash
+set -a
+if [ -f "$(dirname "$0")/.env" ]; then
+    . "$(dirname "$0")/.env"
+fi
+set +a
+cd "$(dirname "$0")"
+exec node server.js
 ```
 
-Inhalt:
+### Nginx fuer den IP-Bootstrap
+
 ```nginx
 server {
-    listen 80;
-    server_name eure-hochzeit.de www.eure-hochzeit.de;
-    # Oder: server_name <deine-ip>;
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
 
     client_max_body_size 0;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -193,160 +122,52 @@ server {
 }
 ```
 
-Aktivieren:
-```bash
-ln -s /etc/nginx/sites-available/hochzeit /etc/nginx/sites-enabled/
-nginx -t && systemctl reload nginx
-```
+## Was Copilot nach dem Rebuild prueft
 
----
+- `http://<server-ip>/` liefert die App statt der Nginx-Default-Seite.
+- `http://<server-ip>/api/health/live` liefert HTTP 200.
+- `pm2-hochzeit` ist aktiviert und aktiv.
+- Der Prozess laeuft als User `hochzeit`.
+- `nginx` ist aktiv.
+- `patgs` kann sich per Key anmelden.
+- `root`-SSH ist gesperrt.
 
-### 7. HTTPS (SSL) einrichten
+## HTTPS-Folgearbeit
 
-Wenn du im Skript Domain und E-Mail eingibst, versucht das Skript HTTPS direkt mit einzurichten.
+Sobald eine Domain vorhanden ist, erweitert Copilot den Hetzner-Stand um:
 
-```bash
-certbot --nginx -d eure-hochzeit.de -d www.eure-hochzeit.de
-```
+- `server_name` mit echter Domain
+- Certbot / Let's Encrypt
+- `TRUST_PROXY=1` in `/var/www/hochzeit/.env`
+- anschliessenden Neustart der App
 
-Fertig! Die App ist jetzt unter `https://eure-hochzeit.de` erreichbar. 🎉
+## Offene To-dos nach dem IP-Bootstrap
 
----
+- [ ] Domain auf die Server-IP zeigen lassen.
+- [ ] HTTPS mit Certbot aktivieren.
+- [ ] `TRUST_PROXY=1` in `/var/www/hochzeit/.env` setzen.
+- [ ] Firewall-Regeln bewusst setzen, z. B. nur `22`, `80` und `443` erlauben.
+- [ ] Backup-Timer plus externes Ziel fuer `data/` und `storage/` aktivieren.
+- [ ] Monitoring fuer `/api/health/live` und `/api/health` einrichten.
 
-### 8. Backup einrichten (sehr wichtig!)
+## Betrieb vor einer Hochzeit
 
-Automatisches tägliches Backup auf Hetzner Object Storage (€0,023/GB):
+Vor einem echten Event laesst Copilot mindestens diese Punkte gegen den Live-Server pruefen:
 
-```bash
-# Hetzner Object Storage Bucket anlegen (im Hetzner Cloud-Panel)
-# dann rclone installieren:
-apt install -y rclone
-rclone config  # Schritt für Schritt folgen (S3-kompatibel, Hetzner Storage Box)
-```
+- Erreichbarkeit der Startseite
+- erfolgreicher Testupload vom Handy
+- Health-Endpunkte
+- genug freier Speicherplatz
+- Backups aktiv
+- Lasttest mit mehreren parallelen Uploads
 
-Einfacherer Weg: Automatisches Hetzner-Server-Backup aktivieren (€0,80/Monat extra):
-→ Hetzner Cloud Panel → Server → Backups → aktivieren ✓
+## Backup und Monitoring
 
-Zusätzlich fuer App-Daten und Bilder im 10-Minuten-Rhythmus:
+Der Zielzustand fuer produktiven Betrieb auf Hetzner bleibt:
 
-```bash
-cd /var/www/hochzeit
-sudo bash ops/install-backup-timer.sh
-sudo nano /etc/default/wedding-camera-roll-backup
-sudo systemctl start wedding-camera-roll-backup.service
-sudo systemctl status wedding-camera-roll-backup.timer
-```
+- Hetzner-Server-Backups aktiv
+- zusaetzlicher Backup-Job fuer `data/` und `storage/`
+- externes Monitoring fuer `/api/health/live` und `/api/health`
+- optionaler Export-Sync per `rclone`
 
-In `/etc/default/wedding-camera-roll-backup` trägst du dein rclone-Remote ein, z. B. `hetzner-s3:hochzeit-backups` oder auch `gdrive:hochzeit-backups`.
-
-Wenn du den optionalen ZIP-Sync aus dem Brautpaar-Bereich direkt zu Google Drive anbieten willst, konfiguriere denselben rclone-Remote zusätzlich in der App-Umgebung:
-
-```bash
-cat >> /var/www/hochzeit/.env << 'EOF'
-RCLONE_REMOTE=gdrive:hochzeit-backups
-RCLONE_EXPORT_PREFIX=wedding-camera-roll
-EXPORT_SYNC_LABEL=Google Drive
-EOF
-```
-
----
-
-## Option B: Railway.app (noch einfacher, aber teurer) 🚂
-
-**Kosten:** ab $5/Monat (mit Volume) | **Aufwand:** ~10 Min.
-
-> ⚠️ **Wichtig:** Railway hat ephemeren Storage – **Volume** ist Pflicht, sonst gehen Bilder verloren!
-
-1. [railway.app](https://railway.app) – Account mit GitHub verbinden
-2. **New Project** → **Deploy from GitHub Repo** → Repo auswählen
-3. Im Railway-Dashboard: **Add Volume** → Mountpoint: `/app/uploads`
-4. Environment Variables setzen:
-   ```
-   PORT=3000
-   ADMIN_PASSWORD=dein-geheimes-passwort
-   DB_PATH=/app/uploads/database.sqlite
-   ```
-5. Deploy klicken – fertig!
-
----
-
-## Option C: Render.com (kostenlose Alternative) 🎨
-
-**Kosten:** kostenlos (mit Einschränkungen) | **Aufwand:** ~10 Min.
-
-> ⚠️ Kostenloser Plan: Server schläft nach 15 Min. Inaktivität. Mit **Disk** (kostenpflichtig) für persistente Daten.
-
----
-
-## Checkliste vor der Hochzeit ✅
-
-- [ ] Server läuft: `pm2 status` zeigt `online`
-- [ ] `curl https://eure-hochzeit.de/api/health` liefert HTTP 200
-- [ ] Website aufgerufen und ein Testfoto hochgeladen
-- [ ] Test mit einem grossen Originalbild vom Handy erfolgreich
-- [ ] Testfoto wieder gelöscht
-- [ ] HTTPS funktioniert (🔒 im Browser)
-- [ ] Backup aktiviert
-- [ ] Mindestens 3x so viel freier Speicher wie die erwartete Bildmenge vorhanden
-- [ ] Venue-WLAN und Mobilfunk-Hotspot vorab getestet
-- [ ] URL an Gäste kommuniziert (z. B. QR-Code auf Tisch)
-- [ ] `MAX_FILE_MB` bewusst gesetzt oder bewusst weggelassen
-
----
-
-## Hohe Verfuegbarkeit waehrend der Hochzeit
-
-Wenn die App waehrend einer Hochzeit nicht ausfallen soll, reicht "irgendwo deployen" nicht. Diese Punkte sind die sinnvolle Mindestabsicherung:
-
-1. Ein echter VPS mit persistentem Storage, nicht ein Free-Tier-Host mit Sleep-Modus.
-2. `pm2` oder `systemd` fuer automatischen Neustart bei Crash oder Reboot.
-3. Nginx mit `client_max_body_size 0`, `proxy_request_buffering off` und langen Timeouts fuer grosse Originaldateien.
-4. Health-Checks auf `/api/health/live` und `/api/health` in Uptime Kuma, Hetzner Monitoring oder einem aehnlichen Monitor eintragen.
-5. Backups aktivieren: Hetzner Cloud Backups plus zusaetzlich Storage-Backup fuer `data/` und `storage/`.
-6. Vor dem Event einen realen Lasttest machen: mehrere Handys gleichzeitig, gleiche Location, echte Dateigroessen.
-7. Einen Notfallplan bereithalten: zweites Netzteil, Powerbank, zweites Admin-Geraet und notfalls Hotspot statt Venue-WLAN.
-
-Lasttest direkt aus dem Repo:
-
-```bash
-cd /var/www/hochzeit
-npm run loadtest -- --baseUrl https://eure-hochzeit.de --uploads 60 --concurrency 12
-```
-
-Fuer einen vorsichtigen Vorabtest reicht auch:
-
-```bash
-npm run loadtest -- --baseUrl https://eure-hochzeit.de --uploads 10 --concurrency 3 --width 1600 --height 1200
-```
-
----
-
-## QR-Code erstellen
-
-```bash
-# QR-Code als PNG generieren (online):
-# https://qr.io oder https://www.qrcode-monkey.com
-# URL eingeben → herunterladen → ausdrucken
-```
-
----
-
-## Häufige Fragen
-
-**Ist das eine native Handy-App?**
-Nein – bewusst nicht. Es ist eine mobile-optimierte Webapp, die direkt im Smartphone-Browser läuft und sich dadurch viel entspannter für alle Gäste öffnen lässt.
-
-**Können Gäste ohne Login hochladen?**
-Ja! Die App identifiziert Geräte über eine eindeutige ID im Browser. Kein Konto nötig.
-
-**Was passiert, wenn ein Gast den Browser-Cache löscht?**
-Die Geräte-ID geht verloren. Der Gast kann seine alten Fotos nicht mehr löschen, aber neue hochladen. Du als Admin (mit `ADMIN_PASSWORD`) kannst alle oder ausgewählte Fotos löschen.
-
-**Wie groß darf das Upload-Limit sein?**
-Wenn `MAX_FILE_MB` nicht gesetzt ist, gibt es serverseitig kein Upload-Limit. Mit `MAX_FILE_MB=200` kannst du bewusst wieder begrenzen.
-
-**Kann ich alle Fotos als ZIP herunterladen?**
-Ja, direkt vom Server: `zip -r fotos.zip /var/www/hochzeit/uploads/`
-
-**Wie viel Speicher brauche ich?**
-Für 100 Gäste à 5 Fotos à 10 MB = ~5 GB. Der CX22-Server hat 40 GB Disk – mehr als genug.
+Die konkrete Ausfuehrung fuer Backup-Timer, Restore und SSH-Administration ist in `docs/ops.md` zusammengezogen, damit `HOSTING.md` nur noch den Bootstrap eines frischen Servers beschreibt.

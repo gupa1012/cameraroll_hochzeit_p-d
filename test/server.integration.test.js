@@ -9,6 +9,7 @@ const path = require('node:path');
 const net = require('node:net');
 const { spawn } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
+const sharp = require('sharp');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tinyPngBuffer = Buffer.from(
@@ -155,11 +156,26 @@ async function postJson(url, payload, { headers = {}, cookieJar } = {}) {
 }
 
 async function uploadPhoto(url, { deviceId, comment, cookieJar } = {}) {
+  const photoBuffer = tinyPngBuffer;
+  const photoType = 'image/png';
+  const photoName = 'tiny.png';
+
+  return uploadCustomPhoto(url, {
+    deviceId,
+    comment,
+    cookieJar,
+    photoBuffer,
+    photoType,
+    photoName
+  });
+}
+
+async function uploadCustomPhoto(url, { deviceId, comment, cookieJar, photoBuffer, photoType, photoName, uploaderInfo } = {}) {
   const form = new FormData();
-  form.append('photo', new Blob([tinyPngBuffer], { type: 'image/png' }), 'tiny.png');
+  form.append('photo', new Blob([photoBuffer], { type: photoType }), photoName);
   form.append('device_id', deviceId);
   form.append('comment', comment || 'Ein Testfoto');
-  form.append('uploader_info', JSON.stringify({ browser: 'node-test', os: 'test-os', device: 'test-device' }));
+  form.append('uploader_info', JSON.stringify(uploaderInfo || { browser: 'node-test', os: 'test-os', device: 'test-device' }));
 
   const response = await fetch(url, {
     method: 'POST',
@@ -174,9 +190,25 @@ async function uploadPhoto(url, { deviceId, comment, cookieJar } = {}) {
   return response;
 }
 
+async function createOrientedJpegBuffer() {
+  return sharp({
+    create: {
+      width: 40,
+      height: 80,
+      channels: 3,
+      background: { r: 220, g: 120, b: 80 }
+    }
+  })
+    .jpeg()
+    .withMetadata({ orientation: 6 })
+    .toBuffer();
+}
+
 async function createSelfServeSpace(baseUrl) {
   const response = await postJson(`${baseUrl}/api/spaces`, {
-    displayName: 'Anna und Ben',
+    partnerOneName: 'Anna',
+    partnerTwoName: 'Ben',
+    weddingDate: '2026-05-03',
     ownerEmail: 'anna@example.com',
     adminPassword: 'Brautpaar123'
   });
@@ -237,6 +269,9 @@ test('self-serve upload keeps original bytes untouched and owner can delete it',
     const configResponse = await fetch(`${server.baseUrl}${createdSpace.guestPath}/api/config`);
     assert.equal(configResponse.status, 200);
     const config = await configResponse.json();
+    assert.equal(createdSpace.displayName, 'Anna & Ben - 03.05.2026');
+    assert.equal(config.space.displayName, 'Anna & Ben - 03.05.2026');
+    assert.equal(config.space.coupleLabel, 'Anna & Ben');
     assert.equal(config.uploadLimitLabel, 'Originaldatei ohne Uploadlimit');
     assert.equal(config.uploadRequestTimeoutMs, 0);
 
@@ -280,6 +315,118 @@ test('self-serve upload keeps original bytes untouched and owner can delete it',
     });
     assert.equal(deleteResponse.status, 200);
     assert.equal(fs.existsSync(storedFilePath), false);
+  } finally {
+    await server.stop();
+  }
+});
+
+test('upload accepts HEIC-labelled files and stores the original bytes untouched', async () => {
+  const server = await startServer();
+
+  try {
+    const createdSpace = await createSelfServeSpace(server.baseUrl);
+    const deviceId = '6b5d9876-891d-473e-bf52-be454fcb0b2b';
+    const heicLikeBuffer = Buffer.from('not-a-real-heic-but-upload-filter-should-accept-it');
+
+    const uploadResponse = await uploadCustomPhoto(`${server.baseUrl}${createdSpace.guestPath}/api/upload`, {
+      deviceId,
+      comment: 'HEIC Test',
+      photoBuffer: heicLikeBuffer,
+      photoType: 'image/heic',
+      photoName: 'mobile-photo.heic'
+    });
+    assert.equal(uploadResponse.status, 201);
+    const uploadedPhoto = await uploadResponse.json();
+
+    const configResponse = await fetch(`${server.baseUrl}/api/operator/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'operator-secret' })
+    });
+    assert.equal(configResponse.status, 200);
+
+    const spacesResponse = await fetch(`${server.baseUrl}/api/operator/spaces`, {
+      headers: { Cookie: configResponse.headers.get('set-cookie') || '' }
+    });
+    const spacesPayload = await spacesResponse.json();
+    const spaceSummary = spacesPayload.spaces.find(space => space.publicId === createdSpace.guestPath.split('/')[2]);
+    assert.ok(spaceSummary);
+
+    const storedFilePath = path.join(server.storageDir, 'spaces', spaceSummary.id, 'uploads', uploadedPhoto.filename);
+    assert.deepEqual(await fsp.readFile(storedFilePath), heicLikeBuffer);
+  } finally {
+    await server.stop();
+  }
+});
+
+test('gallery thumbnails are auto-rotated from EXIF orientation metadata', async () => {
+  const server = await startServer();
+
+  try {
+    const createdSpace = await createSelfServeSpace(server.baseUrl);
+    const deviceId = '7c6e0876-891d-473e-bf52-be454fcb0b2b';
+    const orientedJpegBuffer = await createOrientedJpegBuffer();
+
+    const uploadResponse = await uploadCustomPhoto(`${server.baseUrl}${createdSpace.guestPath}/api/upload`, {
+      deviceId,
+      comment: 'EXIF Rotation',
+      photoBuffer: orientedJpegBuffer,
+      photoType: 'image/jpeg',
+      photoName: 'portrait.jpg'
+    });
+    assert.equal(uploadResponse.status, 201);
+    const uploadedPhoto = await uploadResponse.json();
+
+    const thumbResponse = await fetch(`${server.baseUrl}${createdSpace.guestPath}/uploads/${encodeURIComponent(uploadedPhoto.filename)}?thumb=1`);
+    assert.equal(thumbResponse.status, 200);
+    assert.match(thumbResponse.headers.get('content-type') || '', /image\/webp/);
+
+    const thumbBuffer = Buffer.from(await thumbResponse.arrayBuffer());
+    const thumbMetadata = await sharp(thumbBuffer).metadata();
+    assert.ok(thumbMetadata.width > thumbMetadata.height);
+  } finally {
+    await server.stop();
+  }
+});
+
+test('optional uploader name is stored in photo metadata', async () => {
+  const server = await startServer();
+
+  try {
+    const createdSpace = await createSelfServeSpace(server.baseUrl);
+    const adminCookies = createCookieJar();
+    const deviceId = '8d7f1876-891d-473e-bf52-be454fcb0b2b';
+
+    const uploadResponse = await uploadCustomPhoto(`${server.baseUrl}${createdSpace.guestPath}/api/upload`, {
+      deviceId,
+      comment: 'Mit Namen',
+      photoBuffer: tinyPngBuffer,
+      photoType: 'image/png',
+      photoName: 'named-upload.png',
+      uploaderInfo: {
+        name: 'Lisa',
+        browser: 'node-test',
+        os: 'test-os',
+        device: 'test-device'
+      }
+    });
+    assert.equal(uploadResponse.status, 201);
+
+    const adminLoginResponse = await postJson(
+      `${server.baseUrl}${createdSpace.guestPath}/api/admin/login`,
+      { password: createdSpace.adminPassword },
+      { cookieJar: adminCookies }
+    );
+    assert.equal(adminLoginResponse.status, 200);
+
+    const adminPhotosResponse = await fetch(`${server.baseUrl}${createdSpace.guestPath}/api/admin/photos?scope=active`, {
+      headers: { Cookie: adminCookies.header() }
+    });
+    assert.equal(adminPhotosResponse.status, 200);
+    const adminPhotos = await adminPhotosResponse.json();
+
+    assert.equal(adminPhotos.length, 1);
+    assert.match(adminPhotos[0].uploader_summary || '', /^Lisa(\s|·|$)/);
   } finally {
     await server.stop();
   }
