@@ -458,23 +458,15 @@ function deletePhotoFiles(photo) {
   const thumbPath = getThumbFilePath(photo.space_id, photo.filename);
   const previewPath = getBrowserPreviewPath(photo.space_id, photo.filename);
 
-  fs.unlink(filePath, error => {
-    if (error && error.code !== 'ENOENT') {
-      console.error('Datei konnte nicht gelöscht werden:', error.message);
+  for (const targetPath of [filePath, thumbPath, previewPath]) {
+    try {
+      fs.unlinkSync(targetPath);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error('Datei konnte nicht gelöscht werden:', error.message);
+      }
     }
-  });
-
-  fs.unlink(thumbPath, error => {
-    if (error && error.code !== 'ENOENT') {
-      console.error('Thumbnail konnte nicht gelöscht werden:', error.message);
-    }
-  });
-
-  fs.unlink(previewPath, error => {
-    if (error && error.code !== 'ENOENT') {
-      console.error('Vorschaubild konnte nicht gelöscht werden:', error.message);
-    }
-  });
+  }
 }
 
 ensureDirectory(DATA_DIR);
@@ -594,7 +586,7 @@ const stmtInsertPhoto = db.prepare(`
   VALUES (:id, :space_id, :filename, :original_name, :device_id, :comment, :uploader_summary, :uploader_info, :uploader_ip, :size)
 `);
 const stmtListActivePhotos = db.prepare(`
-  SELECT id, filename, original_name, comment, uploaded_at, size, device_id
+  SELECT id, filename, original_name, comment, uploaded_at, size, device_id, uploader_summary, uploader_info
   FROM photos
   WHERE space_id = ? AND archived_at IS NULL
   ORDER BY uploaded_at DESC
@@ -1226,12 +1218,21 @@ router.get('/api/photos', (req, res) => {
   const deviceId = String(req.get('X-Device-Id') || '').trim();
   const isValidCurrentDevice = isValidDeviceId(deviceId);
   const photos = stmtListActivePhotos.all(req.space.id).map(photo => ({
+    uploader_name: (() => {
+      try {
+        const parsed = JSON.parse(photo.uploader_info || '{}');
+        return typeof parsed.name === 'string' ? parsed.name.trim().slice(0, 80) : '';
+      } catch {
+        return '';
+      }
+    })(),
     id: photo.id,
     filename: photo.filename,
     original_name: photo.original_name,
     comment: photo.comment,
     uploaded_at: photo.uploaded_at,
     size: photo.size,
+    uploader_summary: photo.uploader_summary,
     isOwn: isValidCurrentDevice && photo.device_id === deviceId
   }));
   res.json(photos);

@@ -595,9 +595,6 @@ button:disabled {
 }
 
 .photo-media-badge {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
   padding: 0.25rem 0.55rem;
   border-radius: 999px;
   background: rgba(63, 44, 28, 0.72);
@@ -605,6 +602,28 @@ button:disabled {
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  max-width: min(75%, 220px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-media-tags {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.uploader-badge {
+  background: rgba(255, 252, 249, 0.9);
+  color: var(--ink);
+  letter-spacing: 0.03em;
+  text-transform: none;
 }
 
 .photo-menu {

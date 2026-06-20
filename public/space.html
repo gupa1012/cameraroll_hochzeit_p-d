@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>__SPACE_NAME__</title>
-  <meta name="description" content="Privater Hochzeits-Space mit privatem Gastzugang und mobilem Foto-Upload direkt im Browser." />
+  <meta name="description" content="Privater Hochzeits-Space mit privatem Gastzugang und mobilem Medien-Upload direkt im Browser." />
   <meta name="robots" content="noindex,nofollow,noarchive" />
   <meta name="theme-color" content="#f5e6d3" />
   <link rel="stylesheet" href="/app.css" />
@@ -15,7 +15,7 @@
       <span class="header-rings">💍</span>
       <span class="eyebrow">Privater Hochzeits-Space</span>
       <h1 id="space-title">__SPACE_NAME__</h1>
-      <p class="space-intro">Teile deine Bilder direkt vom Handy und sammle die Erinnerungen des besonderen Tages an einem Ort. Dieser Bereich ist über den privaten Link oder QR-Code nur für die Gäste erreichbar.</p>
+      <p class="space-intro">Teile deine Fotos und Videos direkt vom Handy und sammle die Erinnerungen des besonderen Tages an einem Ort. Dieser Bereich ist über den privaten Link oder QR-Code nur für die Gäste erreichbar.</p>
     </div>
   </header>
 
@@ -23,20 +23,18 @@
     <section class="upload-section">
       <article id="space-upload-card" class="section-card stack upload-surface-card">
         <div class="section-heading stack compact-stack">
-          <span class="eyebrow">Fotos hochladen</span>
+          <span class="eyebrow">Medien hochladen</span>
           <h2>Momente vom Tag hinzufügen</h2>
-          <p class="muted">Mehrere Bilder können gleichzeitig hochgeladen werden. Die Originaldateien bleiben unverändert und die Galerie lädt anschließend automatisch neu.</p>
+          <p class="muted">Mehrere Fotos und Videos können gleichzeitig hochgeladen werden. Die Originaldateien bleiben unverändert und die Galerie lädt anschließend automatisch neu.</p>
         </div>
 
         <div class="drop-zone" id="drop-zone">
           <input id="photo-input" class="visually-hidden-input" type="file" accept="image/*,video/*" multiple />
-          <input id="camera-input" class="visually-hidden-input" type="file" accept="image/*,video/*" capture="environment" />
           <span class="drop-icon">📸</span>
-          <h3>Hier tippen oder Bilder hineinziehen</h3>
-          <p id="upload-hint">Galerie oder Dateispeicher öffnen · mehrere Bilder auf einmal</p>
+          <h3>Hier tippen oder Medien hineinziehen</h3>
+          <p id="upload-hint">Galerie oder Dateispeicher öffnen · mehrere Medien auf einmal</p>
           <div class="picker-actions">
-            <button id="pick-gallery-button" class="upload-btn picker-button" type="button">Aus Galerie oder Dateien wählen</button>
-            <button id="pick-camera-button" class="refresh-btn picker-button" type="button">Kamera öffnen</button>
+            <button id="pick-gallery-button" class="upload-btn picker-button" type="button">Aus Galerie wählen</button>
           </div>
         </div>
 
@@ -51,11 +49,11 @@
         <div class="field">
           <label for="comment-input">Kurzer Gruß oder Bildnotiz</label>
           <textarea id="comment-input" maxlength="__MAX_COMMENT_LENGTH__" placeholder="Zum Beispiel: Erster Tanz, Sonnenuntergang im Garten oder eine kurze Nachricht an das Brautpaar"></textarea>
-          <p class="field-help">Der Text wird zusammen mit allen aktuell ausgewählten Bildern gespeichert.</p>
+          <p class="field-help">Der Text wird zusammen mit allen aktuell ausgewählten Medien gespeichert.</p>
         </div>
 
         <div class="button-row">
-          <button id="upload-button" class="upload-btn" type="button" disabled>Fotos hochladen</button>
+          <button id="upload-button" class="upload-btn" type="button" disabled>Medien hochladen</button>
         </div>
 
         <div id="progress-wrap" class="progress-wrap">
@@ -278,10 +276,8 @@
     const publicGuestAccessStatusElement = document.getElementById('public-guest-access-status');
     const uploadButton = document.getElementById('upload-button');
     const photoInput = document.getElementById('photo-input');
-    const cameraInput = document.getElementById('camera-input');
     const dropZone = document.getElementById('drop-zone');
     const pickGalleryButton = document.getElementById('pick-gallery-button');
-    const pickCameraButton = document.getElementById('pick-camera-button');
     const previewStrip = document.getElementById('preview-strip');
     const uploaderNameInput = document.getElementById('uploader-name-input');
     const progressWrap = document.getElementById('progress-wrap');
@@ -593,6 +589,16 @@
       imageLink.rel = 'noreferrer';
       imageLink.className = 'photo-image-link';
 
+      const mediaTags = document.createElement('div');
+      mediaTags.className = 'photo-media-tags';
+
+      if (photo.uploader_name) {
+        const uploaderBadge = document.createElement('span');
+        uploaderBadge.className = 'photo-media-badge uploader-badge';
+        uploaderBadge.textContent = photo.uploader_name;
+        mediaTags.append(uploaderBadge);
+      }
+
       if (videoPhoto) {
         const video = document.createElement('video');
         video.src = fullUrl;
@@ -605,7 +611,7 @@
         const videoBadge = document.createElement('span');
         videoBadge.className = 'photo-media-badge';
         videoBadge.textContent = 'Video';
-        imageLink.append(videoBadge);
+        mediaTags.append(videoBadge);
       } else {
         const thumbnailUrl = `${spaceBasePath}/uploads/${encodeURIComponent(photo.filename)}?thumb=1`;
         const image = document.createElement('img');
@@ -613,6 +619,10 @@
         image.alt = photo.original_name || 'Hochzeitsfoto';
         image.loading = 'lazy';
         imageLink.append(image);
+      }
+
+      if (mediaTags.childElementCount) {
+        imageLink.append(mediaTags);
       }
 
       const menu = document.createElement('details');
@@ -737,7 +747,7 @@
       document.title = config.space.displayName;
       document.getElementById('space-title').textContent = config.space.displayName;
       spaceFeedCopyElement.textContent = buildFeedCopy(config.space.coupleLabel || config.space.displayName);
-      uploadHint.textContent = 'Galerie oder Dateispeicher öffnen · Bilder und kurze Videos auf einmal';
+      uploadHint.textContent = 'Galerie öffnen und Bilder und Videos auswählen';
       uploadLimitBadge.textContent = config.uploadLimitLabel || 'Originaldatei ohne Uploadlimit';
       commentInput.maxLength = config.maxCommentLength || __MAX_COMMENT_LENGTH__;
       uploadRequestTimeoutMs = Number.isFinite(config.uploadRequestTimeoutMs) ? config.uploadRequestTimeoutMs : 0;
@@ -936,7 +946,7 @@
 
     async function uploadPhoto() {
       if (!pendingFiles.length) {
-        setStatus(uploadStatusElement, 'Bitte waehle zuerst mindestens ein Bild aus.', 'error');
+        setStatus(uploadStatusElement, 'Bitte waehle zuerst mindestens ein Medium aus.', 'error');
         return;
       }
 
@@ -1001,7 +1011,6 @@
       previewStrip.innerHTML = '';
       pendingFiles = [];
       photoInput.value = '';
-      cameraInput.value = '';
       commentInput.value = '';
       uploadButton.disabled = true;
       setTimeout(() => {
@@ -1009,7 +1018,7 @@
       }, 800);
 
       if (failed === 0) {
-        setStatus(uploadStatusElement, `${uploaded} Foto${uploaded === 1 ? '' : 's'} erfolgreich hochgeladen.`, 'success');
+        setStatus(uploadStatusElement, `${uploaded} Medium${uploaded === 1 ? '' : 'en'} erfolgreich hochgeladen.`, 'success');
       } else {
         const summary = `${uploaded} hochgeladen, ${failed} fehlgeschlagen.`;
         const detail = failureMessages.length ? ` Grund: ${failureMessages[0]}` : '';
@@ -1139,11 +1148,7 @@
     pickGalleryButton.addEventListener('click', () => {
       photoInput.click();
     });
-    pickCameraButton.addEventListener('click', () => {
-      cameraInput.click();
-    });
     photoInput.addEventListener('change', () => handleFiles([...photoInput.files]));
-    cameraInput.addEventListener('change', () => handleFiles([...cameraInput.files]));
     uploadButton.addEventListener('click', uploadPhoto);
     adminLoginButton.addEventListener('click', submitAdminLogin);
     adminLogoutButton.addEventListener('click', logoutAdmin);
