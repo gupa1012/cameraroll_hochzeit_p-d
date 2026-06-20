@@ -581,15 +581,30 @@ button:disabled {
 
 .photo-image-link {
   display: block;
+  position: relative;
 }
 
-.photo-card img {
+.photo-card img,
+.photo-card video {
   display: block;
   width: 100%;
   aspect-ratio: 1;
   height: auto;
   object-fit: cover;
   background: #f0e5d7;
+}
+
+.photo-media-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(63, 44, 28, 0.72);
+  color: #fff;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .photo-menu {

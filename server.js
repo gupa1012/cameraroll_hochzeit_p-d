@@ -381,6 +381,10 @@ function getBrowserPreviewPath(spaceId, filename) {
   return path.join(getSpaceDirectories(spaceId).thumbsDir, `${filename}.preview.jpg`);
 }
 
+function isVideoFilename(filename) {
+  return /\.(mp4|mov|webm|m4v)$/i.test(String(filename || ''));
+}
+
 function isHeicFilename(filename) {
   return /\.(heic|heif)$/i.test(String(filename || ''));
 }
@@ -400,6 +404,10 @@ async function createImagePipeline(sourcePath, filename) {
 }
 
 async function ensureThumb(spaceId, filename) {
+  if (isVideoFilename(filename)) {
+    return null;
+  }
+
   const thumbPath = getThumbFilePath(spaceId, filename);
   if (fs.existsSync(thumbPath)) return thumbPath;
 
@@ -701,13 +709,13 @@ const uploadOptions = {
     }
   }),
   fileFilter: (_req, file, callback) => {
-    const allowedMime = /^image\/(jpeg|jpg|png|gif|webp|heic|heif|avif)$/i.test(file.mimetype);
-    const allowedExtension = /\.(jpg|jpeg|png|gif|webp|heic|heif|avif)$/i.test(file.originalname);
+    const allowedMime = /^(image\/(jpeg|jpg|png|gif|webp|heic|heif|avif)|video\/(mp4|webm|quicktime|x-m4v))$/i.test(file.mimetype);
+    const allowedExtension = /\.(jpg|jpeg|png|gif|webp|heic|heif|avif|mp4|mov|webm|m4v)$/i.test(file.originalname);
     if (allowedMime || allowedExtension) {
       callback(null, true);
       return;
     }
-    callback(new Error('Nur Bilder erlaubt (JPEG, PNG, GIF, WebP, HEIC).'));
+    callback(new Error('Nur Bilder und Videos erlaubt (JPEG, PNG, GIF, WebP, HEIC, MP4, MOV, WebM).'));
   }
 };
 

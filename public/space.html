@@ -29,8 +29,8 @@
         </div>
 
         <div class="drop-zone" id="drop-zone">
-          <input id="photo-input" class="visually-hidden-input" type="file" accept="image/*" multiple />
-          <input id="camera-input" class="visually-hidden-input" type="file" accept="image/*" capture="environment" />
+          <input id="photo-input" class="visually-hidden-input" type="file" accept="image/*,video/*" multiple />
+          <input id="camera-input" class="visually-hidden-input" type="file" accept="image/*,video/*" capture="environment" />
           <span class="drop-icon">📸</span>
           <h3>Hier tippen oder Bilder hineinziehen</h3>
           <p id="upload-hint">Galerie oder Dateispeicher öffnen · mehrere Bilder auf einmal</p>
@@ -551,11 +551,18 @@
       photoDetailDialog.showModal();
     }
 
-    function isImageLikeFile(file) {
+    function isVideoLikeFile(file) {
       if (!file) return false;
       const mimeType = String(file.type || '').toLowerCase();
       const fileName = String(file.name || '').toLowerCase();
-      return mimeType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic|heif|avif)$/i.test(fileName);
+      return mimeType.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(fileName);
+    }
+
+    function isUploadableFile(file) {
+      if (!file) return false;
+      const mimeType = String(file.type || '').toLowerCase();
+      const fileName = String(file.name || '').toLowerCase();
+      return mimeType.startsWith('image/') || isVideoLikeFile(file) || /\.(jpg|jpeg|png|gif|webp|heic|heif|avif)$/i.test(fileName);
     }
 
     function buildPhotoViewUrl(photo) {
@@ -566,6 +573,10 @@
       return `${spaceBasePath}/uploads/${encodedFilename}`;
     }
 
+    function isVideoPhoto(photo) {
+      return /\.(mp4|mov|webm|m4v)$/i.test(String(photo?.filename || ''));
+    }
+
     function buildPhotoCard(photo) {
       const isOwnPhoto = Boolean(photo.isOwn || (photo.device_id && photo.device_id === getDeviceId()) || getOwnPhotoIds().includes(photo.id));
       const wrapper = document.createElement('article');
@@ -573,8 +584,8 @@
       if (isOwnPhoto) wrapper.classList.add('mine');
       if (adminUnlocked) wrapper.classList.add('admin-mode');
 
-      const thumbnailUrl = `${spaceBasePath}/uploads/${encodeURIComponent(photo.filename)}?thumb=1`;
       const fullUrl = buildPhotoViewUrl(photo);
+      const videoPhoto = isVideoPhoto(photo);
 
       const imageLink = document.createElement('a');
       imageLink.href = fullUrl;
@@ -582,11 +593,27 @@
       imageLink.rel = 'noreferrer';
       imageLink.className = 'photo-image-link';
 
-      const image = document.createElement('img');
-      image.src = thumbnailUrl;
-      image.alt = photo.original_name || 'Hochzeitsfoto';
-      image.loading = 'lazy';
-      imageLink.append(image);
+      if (videoPhoto) {
+        const video = document.createElement('video');
+        video.src = fullUrl;
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        video.className = 'photo-video';
+        imageLink.append(video);
+
+        const videoBadge = document.createElement('span');
+        videoBadge.className = 'photo-media-badge';
+        videoBadge.textContent = 'Video';
+        imageLink.append(videoBadge);
+      } else {
+        const thumbnailUrl = `${spaceBasePath}/uploads/${encodeURIComponent(photo.filename)}?thumb=1`;
+        const image = document.createElement('img');
+        image.src = thumbnailUrl;
+        image.alt = photo.original_name || 'Hochzeitsfoto';
+        image.loading = 'lazy';
+        imageLink.append(image);
+      }
 
       const menu = document.createElement('details');
       menu.className = 'photo-menu';
@@ -710,7 +737,7 @@
       document.title = config.space.displayName;
       document.getElementById('space-title').textContent = config.space.displayName;
       spaceFeedCopyElement.textContent = buildFeedCopy(config.space.coupleLabel || config.space.displayName);
-      uploadHint.textContent = 'Galerie oder Dateispeicher öffnen · mehrere Bilder auf einmal';
+      uploadHint.textContent = 'Galerie oder Dateispeicher öffnen · Bilder und kurze Videos auf einmal';
       uploadLimitBadge.textContent = config.uploadLimitLabel || 'Originaldatei ohne Uploadlimit';
       commentInput.maxLength = config.maxCommentLength || __MAX_COMMENT_LENGTH__;
       uploadRequestTimeoutMs = Number.isFinite(config.uploadRequestTimeoutMs) ? config.uploadRequestTimeoutMs : 0;
@@ -761,10 +788,23 @@
     function renderPreview(files) {
       previewStrip.innerHTML = '';
       for (const file of files.slice(0, 10)) {
+        const objectUrl = URL.createObjectURL(file);
+        if (isVideoLikeFile(file)) {
+          const video = document.createElement('video');
+          video.className = 'preview-thumb';
+          video.src = objectUrl;
+          video.muted = true;
+          video.playsInline = true;
+          video.preload = 'metadata';
+          video.onloadeddata = () => URL.revokeObjectURL(objectUrl);
+          previewStrip.append(video);
+          continue;
+        }
+
         const img = document.createElement('img');
         img.className = 'preview-thumb';
-        img.src = URL.createObjectURL(file);
-        img.onload = () => URL.revokeObjectURL(img.src);
+        img.src = objectUrl;
+        img.onload = () => URL.revokeObjectURL(objectUrl);
         previewStrip.append(img);
       }
 
@@ -779,25 +819,31 @@
     function handleFiles(files) {
       if (!files.length) return;
 
-      const validFiles = files.filter(isImageLikeFile);
+      const validFiles = files.filter(isUploadableFile);
       const invalidCount = files.length - validFiles.length;
       if (!validFiles.length) {
         pendingFiles = [];
         previewStrip.innerHTML = '';
         uploadButton.disabled = true;
-        setStatus(uploadStatusElement, 'Bitte nur Bilddateien auswählen.', 'error');
+        setStatus(uploadStatusElement, 'Bitte nur Bild- oder Videodateien auswählen.', 'error');
         return;
       }
 
       pendingFiles = validFiles;
       uploadButton.disabled = false;
       renderPreview(validFiles);
+      const imageCount = validFiles.filter(file => !isVideoLikeFile(file)).length;
+      const videoCount = validFiles.length - imageCount;
+      const mediaSummary = [
+        imageCount ? `${imageCount} Bild${imageCount === 1 ? '' : 'er'}` : '',
+        videoCount ? `${videoCount} Video${videoCount === 1 ? '' : 's'}` : ''
+      ].filter(Boolean).join(' und ');
       if (invalidCount > 0) {
-        setStatus(uploadStatusElement, `${validFiles.length} Foto${validFiles.length === 1 ? '' : 's'} bereit. ${invalidCount} Datei${invalidCount === 1 ? '' : 'en'} wurde ignoriert, weil sie kein Bild ist.`, 'error');
+        setStatus(uploadStatusElement, `${mediaSummary} bereit. ${invalidCount} Datei${invalidCount === 1 ? '' : 'en'} wurde ignoriert, weil sie kein Bild oder Video ist.`, 'error');
         return;
       }
 
-      setStatus(uploadStatusElement, `${validFiles.length} Foto${validFiles.length === 1 ? '' : 's'} ausgewählt.`);
+      setStatus(uploadStatusElement, `${mediaSummary} ausgewählt.`);
     }
 
     function uploadSingleFile(file, index, total, uploadState) {

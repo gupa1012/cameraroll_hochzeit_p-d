@@ -359,6 +359,54 @@ test('upload accepts HEIC-labelled files and stores the original bytes untouched
   }
 });
 
+test('upload accepts MP4-labelled files and stores the original bytes untouched', async () => {
+  const server = await startServer();
+
+  try {
+    const createdSpace = await createSelfServeSpace(server.baseUrl);
+    const deviceId = '9e8f2876-891d-473e-bf52-be454fcb0b2b';
+    const videoLikeBuffer = Buffer.from('not-a-real-mp4-but-upload-filter-should-accept-it');
+
+    const uploadResponse = await uploadCustomPhoto(`${server.baseUrl}${createdSpace.guestPath}/api/upload`, {
+      deviceId,
+      comment: 'Video Test',
+      photoBuffer: videoLikeBuffer,
+      photoType: 'video/mp4',
+      photoName: 'dance-floor.mp4'
+    });
+    assert.equal(uploadResponse.status, 201);
+    const uploadedPhoto = await uploadResponse.json();
+
+    const photosResponse = await fetch(`${server.baseUrl}${createdSpace.guestPath}/api/photos`, {
+      headers: { 'X-Device-Id': deviceId }
+    });
+    assert.equal(photosResponse.status, 200);
+    const photos = await photosResponse.json();
+
+    assert.equal(photos.length, 1);
+    assert.equal(photos[0].original_name, 'dance-floor.mp4');
+
+    const configResponse = await fetch(`${server.baseUrl}/api/operator/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'operator-secret' })
+    });
+    assert.equal(configResponse.status, 200);
+
+    const spacesResponse = await fetch(`${server.baseUrl}/api/operator/spaces`, {
+      headers: { Cookie: configResponse.headers.get('set-cookie') || '' }
+    });
+    const spacesPayload = await spacesResponse.json();
+    const spaceSummary = spacesPayload.spaces.find(space => space.publicId === createdSpace.guestPath.split('/')[2]);
+    assert.ok(spaceSummary);
+
+    const storedFilePath = path.join(server.storageDir, 'spaces', spaceSummary.id, 'uploads', uploadedPhoto.filename);
+    assert.deepEqual(await fsp.readFile(storedFilePath), videoLikeBuffer);
+  } finally {
+    await server.stop();
+  }
+});
+
 test('gallery thumbnails are auto-rotated from EXIF orientation metadata', async () => {
   const server = await startServer();
 
