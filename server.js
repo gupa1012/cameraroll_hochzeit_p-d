@@ -112,15 +112,29 @@ async function createQrCodeDataUrl(value) {
   });
 }
 
+async function createQrCodeDownloadDataUrl(value) {
+  return QRCode.toDataURL(value, {
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 1200,
+    color: {
+      dark: '#5d534d',
+      light: '#ffffff'
+    }
+  });
+}
+
 async function buildGuestAccessPayload(req, publicId, guestToken, extraFields = {}) {
   const guestPath = getSpacePath(publicId, guestToken);
   const guestUrl = getSpaceUrl(req, publicId, guestToken);
   const qrCodeDataUrl = await createQrCodeDataUrl(guestUrl);
+  const qrCodeDownloadDataUrl = await createQrCodeDownloadDataUrl(guestUrl);
 
   return {
     guestPath,
     guestUrl,
     qrCodeDataUrl,
+    qrCodeDownloadDataUrl,
     ...extraFields
   };
 }
@@ -128,11 +142,13 @@ async function buildGuestAccessPayload(req, publicId, guestToken, extraFields = 
 async function buildSpaceAccessPayload(req, extraFields = {}) {
   const guestUrl = `${getRequestBaseUrl(req)}${getCurrentSpaceBasePath(req)}`;
   const qrCodeDataUrl = await createQrCodeDataUrl(guestUrl);
+  const qrCodeDownloadDataUrl = await createQrCodeDownloadDataUrl(guestUrl);
 
   return {
     guestPath: getCurrentSpaceBasePath(req),
     guestUrl,
     qrCodeDataUrl,
+    qrCodeDownloadDataUrl,
     qrPrintUrl: `${getCurrentSpaceBasePath(req)}/api/admin/qr-print`,
     ...extraFields
   };
@@ -876,6 +892,26 @@ function resolveGuestSpace(req, res, next) {
   next();
 }
 
+function resolveOperatorPreviewSpace(req, res, next) {
+  const spaceId = String(req.params.spaceId || '').trim();
+
+  setNoIndex(res);
+  res.set('Cache-Control', 'private, no-store');
+
+  if (!spaceId) {
+    return res.status(404).send('Not found');
+  }
+
+  const space = stmtGetSpaceById.get(spaceId);
+  if (!space || space.status !== SPACE_STATUS_ACTIVE) {
+    return res.status(404).send('Not found');
+  }
+
+  req.space = space;
+  req.guestToken = '';
+  next();
+}
+
 function listSpacePhotos(spaceId, scope) {
   if (scope === 'archived') {
     return stmtListAdminArchivedPhotos.all(spaceId);
@@ -1136,18 +1172,20 @@ app.post('/api/operator/spaces/:spaceId/reset-admin-password', requireOperator, 
   const space = stmtGetSpaceById.get(req.params.spaceId);
   if (!space) return res.status(404).json({ error: 'Space nicht gefunden.' });
 
-  const adminPassword = randomPassword(14);
+  const requestedPassword = String(req.body?.adminPassword || '').trim();
+  if (requestedPassword && !isValidAdminPassword(requestedPassword)) {
+    return res.status(400).json({ error: 'Das neue Admin-Passwort muss zwischen 8 und 80 Zeichen lang sein.' });
+  }
+
+  const adminPassword = requestedPassword || randomPassword(14);
   stmtUpdateAdminPasswordHash.run(hashValue(adminPassword), space.id);
   stmtDeleteAllSpaceAdminSessions.run(space.id);
 
   res.json({ success: true, adminPassword });
 });
 
-const guestRouter = express.Router({ mergeParams: true });
-guestRouter.use(guestRouteLimiter);
-guestRouter.use(resolveGuestSpace);
-
-guestRouter.get('/', (req, res) => {
+function registerSpaceRoutes(router) {
+router.get('/', (req, res) => {
   res.type('html').send(renderTemplate(SPACE_PAGE_PATH, {
     SPACE_NAME: escapeHtml(req.space.display_name),
     UPLOAD_LIMIT_LABEL: escapeHtml(getUploadLimitLabel(MAX_FILE_MB)),
@@ -1155,7 +1193,7 @@ guestRouter.get('/', (req, res) => {
   }));
 });
 
-guestRouter.get('/api/config', (req, res) => {
+router.get('/api/config', (req, res) => {
   setNoIndex(res);
   res.json({
     space: {
@@ -1175,7 +1213,7 @@ guestRouter.get('/api/config', (req, res) => {
   });
 });
 
-guestRouter.get('/api/photos', (req, res) => {
+router.get('/api/photos', (req, res) => {
   setNoIndex(res);
   const deviceId = String(req.get('X-Device-Id') || '').trim();
   const isValidCurrentDevice = isValidDeviceId(deviceId);
@@ -1191,7 +1229,7 @@ guestRouter.get('/api/photos', (req, res) => {
   res.json(photos);
 });
 
-guestRouter.get('/api/guest-access', async (req, res, next) => {
+router.get('/api/guest-access', async (req, res, next) => {
   setNoIndex(res);
 
   try {
@@ -1201,7 +1239,7 @@ guestRouter.get('/api/guest-access', async (req, res, next) => {
   }
 });
 
-guestRouter.get('/api/admin/session', (req, res) => {
+router.get('/api/admin/session', (req, res) => {
   setNoIndex(res);
   const session = getSpaceAdminSession(req, req.space.id);
   if (!session) {
@@ -1210,7 +1248,7 @@ guestRouter.get('/api/admin/session', (req, res) => {
   res.json({ success: true });
 });
 
-guestRouter.post('/api/admin/login', adminLoginLimiter, (req, res) => {
+router.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   setNoIndex(res);
 
   const password = String(req.body?.password || '');
@@ -1238,7 +1276,7 @@ guestRouter.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   res.json({ success: true });
 });
 
-guestRouter.post('/api/admin/logout', (req, res) => {
+router.post('/api/admin/logout', (req, res) => {
   setNoIndex(res);
   const cookies = parseCookies(req.headers.cookie);
   const rawToken = cookies.space_admin_session || '';
@@ -1257,13 +1295,13 @@ guestRouter.post('/api/admin/logout', (req, res) => {
   res.json({ success: true });
 });
 
-guestRouter.get('/api/admin/photos', adminLimiter, requireSpaceAdmin, (req, res) => {
+router.get('/api/admin/photos', adminLimiter, requireSpaceAdmin, (req, res) => {
   setNoIndex(res);
   const scope = req.query.scope === 'archived' ? 'archived' : 'active';
   res.json(listSpacePhotos(req.space.id, scope));
 });
 
-guestRouter.get('/api/admin/guest-access', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+router.get('/api/admin/guest-access', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
   setNoIndex(res);
 
   try {
@@ -1273,7 +1311,7 @@ guestRouter.get('/api/admin/guest-access', adminLimiter, requireSpaceAdmin, asyn
   }
 });
 
-guestRouter.get('/api/admin/qr-print', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+router.get('/api/admin/qr-print', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
   setNoIndex(res);
 
   try {
@@ -1288,7 +1326,7 @@ guestRouter.get('/api/admin/qr-print', adminLimiter, requireSpaceAdmin, async (r
   }
 });
 
-guestRouter.get('/api/admin/export.zip', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+router.get('/api/admin/export.zip', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
   setNoIndex(res);
 
   try {
@@ -1309,7 +1347,7 @@ guestRouter.get('/api/admin/export.zip', adminLimiter, requireSpaceAdmin, async 
   }
 });
 
-guestRouter.post('/api/admin/export-sync', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
+router.post('/api/admin/export-sync', adminLimiter, requireSpaceAdmin, async (req, res, next) => {
   setNoIndex(res);
 
   if (!EXPORT_SYNC_ENABLED) {
@@ -1336,7 +1374,7 @@ guestRouter.post('/api/admin/export-sync', adminLimiter, requireSpaceAdmin, asyn
   }
 });
 
-guestRouter.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) => {
+router.post('/api/upload', uploadLimiter, upload.single('photo'), async (req, res) => {
   setNoIndex(res);
 
   if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen.' });
@@ -1377,7 +1415,7 @@ guestRouter.post('/api/upload', uploadLimiter, upload.single('photo'), async (re
   });
 });
 
-guestRouter.delete('/api/photos/:photoId', deleteLimiter, (req, res) => {
+router.delete('/api/photos/:photoId', deleteLimiter, (req, res) => {
   setNoIndex(res);
 
   const photo = stmtGetPhotoByIdAndSpace.get(req.params.photoId, req.space.id);
@@ -1396,7 +1434,7 @@ guestRouter.delete('/api/photos/:photoId', deleteLimiter, (req, res) => {
   res.json({ success: true });
 });
 
-guestRouter.post('/api/admin/delete-selected', adminLimiter, requireSpaceAdmin, (req, res) => {
+router.post('/api/admin/delete-selected', adminLimiter, requireSpaceAdmin, (req, res) => {
   setNoIndex(res);
 
   const ids = Array.isArray(req.body?.ids)
@@ -1418,7 +1456,7 @@ guestRouter.post('/api/admin/delete-selected', adminLimiter, requireSpaceAdmin, 
   res.json({ success: true, archived });
 });
 
-guestRouter.post('/api/admin/restore-selected', adminLimiter, requireSpaceAdmin, (req, res) => {
+router.post('/api/admin/restore-selected', adminLimiter, requireSpaceAdmin, (req, res) => {
   setNoIndex(res);
 
   const ids = Array.isArray(req.body?.ids)
@@ -1440,7 +1478,7 @@ guestRouter.post('/api/admin/restore-selected', adminLimiter, requireSpaceAdmin,
   res.json({ success: true, restored });
 });
 
-guestRouter.post('/api/admin/delete-archived-selected', adminLimiter, requireSpaceAdmin, (req, res) => {
+router.post('/api/admin/delete-archived-selected', adminLimiter, requireSpaceAdmin, (req, res) => {
   setNoIndex(res);
 
   const ids = Array.isArray(req.body?.ids)
@@ -1463,7 +1501,7 @@ guestRouter.post('/api/admin/delete-archived-selected', adminLimiter, requireSpa
   res.json({ success: true, deleted });
 });
 
-guestRouter.get('/uploads/:filename', fileLimiter, async (req, res) => {
+router.get('/uploads/:filename', fileLimiter, async (req, res) => {
   const filename = req.params.filename;
   if (filename.includes('..') || filename.includes('/')) {
     return res.status(400).send('Bad request');
@@ -1483,9 +1521,21 @@ guestRouter.get('/uploads/:filename', fileLimiter, async (req, res) => {
   if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
   res.sendFile(filePath);
 });
+}
+
+const guestRouter = express.Router({ mergeParams: true });
+guestRouter.use(guestRouteLimiter);
+guestRouter.use(resolveGuestSpace);
+registerSpaceRoutes(guestRouter);
+
+const operatorPreviewRouter = express.Router({ mergeParams: true });
+operatorPreviewRouter.use(requireOperator);
+operatorPreviewRouter.use(resolveOperatorPreviewSpace);
+registerSpaceRoutes(operatorPreviewRouter);
 
 app.use('/p/:publicId/:guestToken', guestRouter);
 app.use('/g/:publicId/:guestToken', guestRouter);
+app.use('/api/operator/spaces/:spaceId/open', operatorPreviewRouter);
 
 app.use((err, _req, res, _next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {

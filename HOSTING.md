@@ -141,10 +141,15 @@ Sobald eine Domain vorhanden ist, erweitert Copilot den Hetzner-Stand um:
 - `TRUST_PROXY=1` in `/var/www/hochzeit/.env`
 - anschliessenden Neustart der App
 
+Der verifizierte Live-Stand mit `ourbigday.space` und `www.ourbigday.space` ist inzwischen auf dem Server aktiv.
+Das Zertifikat wurde direkt per Certbot auf dem Hetzner-Host ausgestellt und ist unter `/etc/letsencrypt/live/ourbigday.space/` hinterlegt.
+Die Nginx-TLS-Konfiguration wurde auf `TLSv1.2` und `TLSv1.3` reduziert und `server_tokens` deaktiviert.
+Zusätzlich ist UFW aktiv und erlaubt nur `22/tcp`, `80/tcp` und `443/tcp` von außen.
+
 ## Offene To-dos nach dem IP-Bootstrap
 
-- [ ] Domain auf die Server-IP zeigen lassen.
-- [ ] HTTPS mit Certbot aktivieren.
+- [x] Domain auf die Server-IP zeigen lassen.
+- [x] HTTPS mit Certbot aktivieren.
 - [ ] `TRUST_PROXY=1` in `/var/www/hochzeit/.env` setzen.
 - [ ] Firewall-Regeln bewusst setzen, z. B. nur `22`, `80` und `443` erlauben.
 - [ ] Backup-Timer plus externes Ziel fuer `data/` und `storage/` aktivieren.

@@ -551,10 +551,39 @@ test('admin and operator flows can be exercised independently', async () => {
     const resetPasswordPayload = await resetPasswordResponse.json();
     assert.match(resetPasswordPayload.adminPassword, /^[A-Za-z0-9]+$/);
 
+    const customResetResponse = await postJson(
+      `${server.baseUrl}/api/operator/spaces/${spaceSummary.id}/reset-admin-password`,
+      { adminPassword: 'NeuGesetzt123' },
+      { cookieJar: operatorCookies }
+    );
+    assert.equal(customResetResponse.status, 200);
+    const customResetPayload = await customResetResponse.json();
+    assert.equal(customResetPayload.adminPassword, 'NeuGesetzt123');
+
     const expiredAdminSessionResponse = await fetch(`${server.baseUrl}${rotatedPayload.guestPath}/api/admin/photos`, {
       headers: { Cookie: adminCookies.header() }
     });
     assert.equal(expiredAdminSessionResponse.status, 401);
+
+    const operatorPreviewResponse = await fetch(`${server.baseUrl}/api/operator/spaces/${spaceSummary.id}/open/`, {
+      headers: { Cookie: operatorCookies.header() }
+    });
+    assert.equal(operatorPreviewResponse.status, 200);
+    assert.match(operatorPreviewResponse.headers.get('content-type') || '', /text\/html/);
+
+    const operatorPreviewConfigResponse = await fetch(`${server.baseUrl}/api/operator/spaces/${spaceSummary.id}/open/api/config`, {
+      headers: { Cookie: operatorCookies.header() }
+    });
+    assert.equal(operatorPreviewConfigResponse.status, 200);
+    const operatorPreviewConfig = await operatorPreviewConfigResponse.json();
+    assert.equal(operatorPreviewConfig.space.displayName, createdSpace.displayName);
+
+    const customAdminLoginResponse = await postJson(
+      `${server.baseUrl}/api/operator/spaces/${spaceSummary.id}/open/api/admin/login`,
+      { password: 'NeuGesetzt123' },
+      { cookieJar: operatorCookies }
+    );
+    assert.equal(customAdminLoginResponse.status, 200);
 
     const operatorCreateResponse = await postJson(
       `${server.baseUrl}/api/operator/spaces`,

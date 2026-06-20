@@ -78,13 +78,9 @@
         <article class="panel stack">
           <span class="eyebrow">Space-Details</span>
           <h2 id="inspect-space-title">Noch kein Space ausgewählt</h2>
-          <p class="muted">Wähle unten einen Space aus, um die aktuelle Galerie oder das Archiv direkt einzusehen und Auffälligkeiten schnell zu prüfen.</p>
-          <div class="action-row">
-            <button id="inspect-active-button" class="secondary" type="button">Aktive Fotos</button>
-            <button id="inspect-archived-button" class="secondary" type="button">Archiv</button>
-          </div>
+          <p class="muted">Wähle unten einen Space aus. Die Detailansicht öffnet sich in einem neuen Fenster, damit dieses Backoffice kompakt bleibt.</p>
           <p id="inspect-status" class="status muted"></p>
-          <div id="inspect-gallery" class="gallery-grid"></div>
+          <div id="inspect-summary" class="stack"></div>
         </article>
       </div>
 
@@ -111,6 +107,28 @@
         </div>
       </article>
     </section>
+
+    <dialog id="reset-admin-password-dialog" class="photo-detail-dialog">
+      <form method="dialog" class="photo-detail-sheet stack">
+        <div class="photo-detail-head">
+          <div>
+            <span class="eyebrow">Admin-Passwort neu setzen</span>
+            <h3 id="reset-admin-password-title">Space auswählen</h3>
+          </div>
+          <button type="submit" class="ghost" value="cancel">Schließen</button>
+        </div>
+        <p class="muted">Du kannst ein neues Passwort direkt vorgeben oder stattdessen ein zufälliges Passwort erzeugen lassen.</p>
+        <div class="field">
+          <label for="reset-admin-password-input">Neues Passwort</label>
+          <input id="reset-admin-password-input" type="password" placeholder="Mindestens 8 Zeichen" autocomplete="new-password" />
+        </div>
+        <p id="reset-admin-password-status" class="status muted"></p>
+        <div class="action-row">
+          <button id="reset-admin-password-submit" class="primary" type="button">Dieses Passwort setzen</button>
+          <button id="reset-admin-password-random" class="secondary" type="button">Zufälliges Passwort vergeben</button>
+        </div>
+      </form>
+    </dialog>
   </main>
 
   <footer class="site-footer">
@@ -133,11 +151,15 @@
     const inspectStatus = document.getElementById('inspect-status');
     const spacesTableBody = document.getElementById('spaces-table-body');
     const secretResult = document.getElementById('secret-result');
-    const inspectGallery = document.getElementById('inspect-gallery');
+    const inspectSummary = document.getElementById('inspect-summary');
     const inspectSpaceTitle = document.getElementById('inspect-space-title');
+    const resetAdminPasswordDialog = document.getElementById('reset-admin-password-dialog');
+    const resetAdminPasswordTitle = document.getElementById('reset-admin-password-title');
+    const resetAdminPasswordInput = document.getElementById('reset-admin-password-input');
+    const resetAdminPasswordStatus = document.getElementById('reset-admin-password-status');
 
     let selectedSpaceId = null;
-    let inspectScope = 'active';
+    let pendingAdminPasswordResetSpace = null;
 
     function setStatus(element, message, kind = 'muted') {
       element.textContent = message;
@@ -184,6 +206,42 @@
 
     function confirmDangerousAction(message) {
       return window.confirm(message);
+    }
+
+    function openAdminPasswordResetDialog(space) {
+      pendingAdminPasswordResetSpace = space;
+      resetAdminPasswordTitle.textContent = `Neues Admin-Passwort für ${space.displayName}`;
+      resetAdminPasswordInput.value = '';
+      setStatus(resetAdminPasswordStatus, '');
+      resetAdminPasswordDialog.showModal();
+      resetAdminPasswordInput.focus();
+    }
+
+    async function submitAdminPasswordReset({ randomize }) {
+      if (!pendingAdminPasswordResetSpace) {
+        return;
+      }
+
+      const customPassword = resetAdminPasswordInput.value.trim();
+      if (!randomize && customPassword.length < 8) {
+        setStatus(resetAdminPasswordStatus, 'Bitte mindestens 8 Zeichen für das neue Passwort eingeben.', 'error');
+        return;
+      }
+
+      setStatus(resetAdminPasswordStatus, 'Admin-Passwort wird gesetzt…');
+      const payload = await operatorPost(
+        `/api/operator/spaces/${encodeURIComponent(pendingAdminPasswordResetSpace.id)}/reset-admin-password`,
+        randomize ? {} : { adminPassword: customPassword }
+      );
+      if (!payload) {
+        setStatus(resetAdminPasswordStatus, 'Admin-Passwort konnte nicht gesetzt werden.', 'error');
+        return;
+      }
+
+      resetAdminPasswordDialog.close();
+      renderSecretBox('Neues Admin-Passwort', [`<code>${escapeHtml(payload.adminPassword)}</code>`]);
+      setStatus(createSpaceStatus, 'Admin-Passwort erfolgreich neu gesetzt.', 'success');
+      pendingAdminPasswordResetSpace = null;
     }
 
     async function ensureSession() {
@@ -259,7 +317,18 @@
         inspectButton.addEventListener('click', async () => {
           selectedSpaceId = space.id;
           inspectSpaceTitle.textContent = space.displayName;
-          await loadSpacePhotos();
+          inspectSummary.innerHTML = `
+            <div class="secret-box-content">
+              <div>
+                <strong>${escapeHtml(space.displayName)}</strong><br>
+                <span class="muted">${escapeHtml(space.ownerEmail)}</span><br>
+                <span class="muted">Public ID: ${escapeHtml(space.publicId)}</span><br>
+                <span class="muted">Status: ${escapeHtml(space.status)}</span><br>
+                <span class="muted">${space.activePhotoCount} aktive · ${space.archivedPhotoCount} archivierte Fotos</span>
+              </div>
+            </div>
+          `;
+          window.open(`/api/operator/spaces/${encodeURIComponent(space.id)}/open/`, '_blank', 'noopener');
         });
 
         const statusButton = document.createElement('button');
@@ -295,11 +364,7 @@
           if (!confirmDangerousAction(`Admin-Passwort für "${space.displayName}" wirklich neu setzen? Bestehende Angaben des Brautpaars werden dadurch sofort ungültig.`)) {
             return;
           }
-          const payload = await operatorPost(`/api/operator/spaces/${encodeURIComponent(space.id)}/reset-admin-password`);
-          if (payload) {
-            renderSecretBox('Neues Admin-Passwort', [`<code>${escapeHtml(payload.adminPassword)}</code>`]);
-            setStatus(createSpaceStatus, 'Admin-Passwort erfolgreich neu gesetzt.', 'success');
-          }
+          openAdminPasswordResetDialog(space);
         });
 
         actionsCell.append(inspectButton, statusButton, rotateButton, resetAdminButton);
@@ -356,56 +421,14 @@
       }
     }
 
-    async function loadSpacePhotos() {
-      if (!selectedSpaceId) {
-        setStatus(inspectStatus, 'Bitte zuerst einen Space auswählen.', 'error');
-        return;
-      }
-
-      setStatus(inspectStatus, 'Fotos werden geladen…');
-      const response = await fetch(`/api/operator/spaces/${encodeURIComponent(selectedSpaceId)}/photos?scope=${encodeURIComponent(inspectScope)}`, {
-        credentials: 'same-origin'
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        setStatus(inspectStatus, payload.error || 'Fotos konnten nicht geladen werden.', 'error');
-        return;
-      }
-
-      inspectGallery.innerHTML = '';
-      for (const photo of payload.photos) {
-        const item = document.createElement('article');
-        item.className = 'photo-card';
-        item.innerHTML = `
-          <img src="/api/operator/spaces/${encodeURIComponent(selectedSpaceId)}/uploads/${encodeURIComponent(photo.filename)}?thumb=1" alt="${photo.original_name || 'Foto'}" loading="lazy">
-          <div class="photo-body">
-            <div class="photo-meta">
-              <strong>${photo.original_name || 'Upload'}</strong>
-              <span>${formatDate(photo.uploaded_at)}</span>
-            </div>
-            <div class="photo-comment">${photo.comment || '<span class="muted">Ohne Kommentar</span>'}</div>
-            <div class="muted">${photo.uploader_summary || 'Unbekannt'}${photo.uploader_ip ? ` · ${photo.uploader_ip}` : ''}</div>
-          </div>
-        `;
-        inspectGallery.append(item);
-      }
-
-      if (!payload.photos.length) {
-        inspectGallery.innerHTML = '<div class="card"><p class="muted">Keine Fotos in diesem Bereich.</p></div>';
-      }
-      setStatus(inspectStatus, `${payload.photos.length} Foto(s) geladen.`, 'success');
-    }
-
     document.getElementById('operator-login-button').addEventListener('click', login);
     document.getElementById('operator-logout-button').addEventListener('click', logout);
     document.getElementById('create-space-button').addEventListener('click', createSpace);
-    document.getElementById('inspect-active-button').addEventListener('click', async () => {
-      inspectScope = 'active';
-      await loadSpacePhotos();
+    document.getElementById('reset-admin-password-submit').addEventListener('click', async () => {
+      await submitAdminPasswordReset({ randomize: false });
     });
-    document.getElementById('inspect-archived-button').addEventListener('click', async () => {
-      inspectScope = 'archived';
-      await loadSpacePhotos();
+    document.getElementById('reset-admin-password-random').addEventListener('click', async () => {
+      await submitAdminPasswordReset({ randomize: true });
     });
 
     ensureSession();

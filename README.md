@@ -147,6 +147,13 @@ Restore-, SSH- und Deploy-Abläufe stehen gesammelt in `docs/ops.md`.
 - Space-Admins erhalten eigene Sessions pro Space.
 - Das Betreiber-Backoffice ist getrennt und durch `OPERATOR_PASSWORD` geschützt.
 
+## Weiterentwicklungsmöglichkeiten
+
+- E-Mail-Versand beim Anlegen eines Spaces, zum Beispiel mit Link und Zugangsdaten an das Brautpaar.
+- Sinnvolle Kandidaten dafür sind ein kleiner SMTP- oder Mail-API-Dienst wie Brevo, Resend oder Amazon SES.
+- Für Produktion sollten dann SPF, DKIM und DMARC für `ourbigday.space` sauber gesetzt werden.
+- Das kann später ergänzt werden, wenn der feste Versand-Flow wirklich gebraucht wird.
+
 ## Historischer Archivstand
 
 Der bisherige Single-Space-Prototyp liegt archiviert unter `archive/single-space-prototype/`.

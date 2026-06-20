@@ -20,8 +20,7 @@ APP_ROOT=/var/www/hochzeit
 DATA_DIR=/var/www/hochzeit/data
 STORAGE_DIR=/var/www/hochzeit/storage
 EXPORTS_DIR=/var/www/hochzeit/data/exports
-RCLONE_REMOTE=hetzner-s3:hochzeit-backups
-RCLONE_PREFIX=wedding-camera-roll
+BACKUP_ROOT=/var/backups/wedding-camera-roll
 EOF
   chmod 0640 "$ENV_FILE"
 fi
@@ -40,10 +39,10 @@ EOF
 
 cat > "$TIMER_FILE" <<'EOF'
 [Unit]
-Description=Run Wedding Camera Roll Backup every 10 minutes
+Description=Run Wedding Camera Roll Backup weekly
 
 [Timer]
-OnCalendar=*:0/10
+OnCalendar=weekly
 Persistent=true
 Unit=wedding-camera-roll-backup.service
 

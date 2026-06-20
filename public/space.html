@@ -160,24 +160,8 @@
             </div>
 
             <div id="admin-toolbar" class="stack hidden">
-              <div id="guest-access-tools" class="success-card hidden">
+              <div class="success-card">
                 <div class="success-grid">
-                  <div class="success-block">
-                    <span class="success-label">Privater Link nur für eure Gäste</span>
-                    <a id="guest-access-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
-                    <div class="action-row compact-actions">
-                      <button id="copy-guest-access-button" class="upload-btn" type="button">Link kopieren</button>
-                      <button id="refresh-guest-access-button" class="refresh-btn" type="button">QR-Code neu laden</button>
-                      <button id="print-guest-access-button" class="refresh-btn" type="button">Papeterie-Druckvorlage</button>
-                    </div>
-                  </div>
-                  <div class="success-block qr-block">
-                    <span class="success-label">QR-Code für eure Gäste</span>
-                    <img id="guest-access-qr-image" class="qr-preview-image" alt="QR-Code für den privaten Gastzugang" />
-                    <div class="action-row compact-actions">
-                      <a id="download-guest-access-qr-button" class="button secondary" href="#" download="space-qr.png">QR-Code speichern</a>
-                    </div>
-                  </div>
                   <div class="success-block">
                     <span class="success-label">Export und Sync</span>
                     <p class="muted">Ladet alle Originale als ZIP herunter oder sendet den Export direkt an euren Cloud-Sync.</p>
@@ -320,13 +304,6 @@
     const publicDownloadGuestAccessQrButton = document.getElementById('public-download-guest-access-qr-button');
     const publicCopyGuestAccessButton = document.getElementById('public-copy-guest-access-button');
     const publicShareGuestAccessButton = document.getElementById('public-share-guest-access-button');
-    const guestAccessTools = document.getElementById('guest-access-tools');
-    const guestAccessUrl = document.getElementById('guest-access-url');
-    const guestAccessQrImage = document.getElementById('guest-access-qr-image');
-    const downloadGuestAccessQrButton = document.getElementById('download-guest-access-qr-button');
-    const copyGuestAccessButton = document.getElementById('copy-guest-access-button');
-    const refreshGuestAccessButton = document.getElementById('refresh-guest-access-button');
-    const printGuestAccessButton = document.getElementById('print-guest-access-button');
     const downloadExportButton = document.getElementById('download-export-button');
     const syncExportButton = document.getElementById('sync-export-button');
     const photoDetailDialog = document.getElementById('photo-detail-dialog');
@@ -745,28 +722,6 @@
       downloadExportButton.href = `${spaceBasePath}/api/admin/export.zip`;
     }
 
-    async function loadGuestAccessTools() {
-      if (!adminUnlocked) {
-        guestAccessTools.classList.add('hidden');
-        return;
-      }
-
-      const response = await fetch(`${spaceBasePath}/api/admin/guest-access`, {
-        credentials: 'same-origin'
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error || 'Privater Link und QR-Code konnten nicht geladen werden.');
-      }
-
-      guestAccessTools.classList.remove('hidden');
-      guestAccessUrl.href = payload.guestUrl;
-      guestAccessUrl.textContent = payload.guestUrl;
-      guestAccessQrImage.src = payload.qrCodeDataUrl;
-      downloadGuestAccessQrButton.href = payload.qrCodeDataUrl;
-      printGuestAccessButton.dataset.printUrl = payload.qrPrintUrl;
-    }
-
     async function loadPublicGuestAccess() {
       try {
         const response = await fetch(`${spaceBasePath}/api/guest-access`, {
@@ -780,7 +735,7 @@
         publicGuestAccessUrl.href = payload.guestUrl;
         publicGuestAccessUrl.textContent = payload.guestUrl;
         publicGuestAccessQrImage.src = payload.qrCodeDataUrl;
-        publicDownloadGuestAccessQrButton.href = payload.qrCodeDataUrl;
+        publicDownloadGuestAccessQrButton.href = payload.qrCodeDownloadDataUrl || payload.qrCodeDataUrl;
         publicShareGuestAccessButton.classList.toggle('hidden', !navigator.share);
         setStatus(publicGuestAccessStatusElement, 'Link und QR-Code sind bereit.', 'success');
       } catch (error) {
@@ -796,7 +751,6 @@
       adminLogoutButton.classList.toggle('hidden', !adminUnlocked);
       archivedScopeButton.classList.toggle('hidden', !adminUnlocked);
       if (!adminUnlocked) {
-        guestAccessTools.classList.add('hidden');
         if (galleryScope === 'archived') {
           galleryScope = 'active';
         }
@@ -1056,7 +1010,6 @@
 
       adminPasswordInput.value = '';
       await refreshAdminState();
-      await loadGuestAccessTools();
       await loadGallery();
       setStatus(adminStatusElement, 'Brautpaar-Bereich aktiv.', 'success');
     }
@@ -1151,9 +1104,6 @@
     archiveSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/delete-selected`, 'Auswahl archiviert.'));
     restoreSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/restore-selected`, 'Auswahl wiederhergestellt.'));
     deleteSelectedButton.addEventListener('click', () => runBatchAction(`${spaceBasePath}/api/admin/delete-archived-selected`, 'Archivierte Auswahl endgültig gelöscht.'));
-    copyGuestAccessButton.addEventListener('click', async () => {
-      await copyText(guestAccessUrl.href, 'Privater Link für eure Gäste kopiert.');
-    });
     publicCopyGuestAccessButton.addEventListener('click', async () => {
       await copyText(publicGuestAccessUrl.href, 'Privater Link für eure Gäste kopiert.', publicGuestAccessStatusElement);
     });
@@ -1169,18 +1119,6 @@
         // Nutzerabbruch nicht als Fehler behandeln.
       }
     });
-    refreshGuestAccessButton.addEventListener('click', async () => {
-      try {
-        await loadGuestAccessTools();
-        setStatus(adminStatusElement, 'QR-Code und privater Link neu geladen.', 'success');
-      } catch (error) {
-        setStatus(adminStatusElement, error.message, 'error');
-      }
-    });
-    printGuestAccessButton.addEventListener('click', () => {
-      if (!printGuestAccessButton.dataset.printUrl) return;
-      window.open(printGuestAccessButton.dataset.printUrl, '_blank', 'noopener');
-    });
     syncExportButton.addEventListener('click', syncExport);
     deviceIdValue.textContent = getDeviceId();
     applyTheme(0);
@@ -1188,9 +1126,6 @@
     Promise.all([loadConfig(), refreshAdminState()])
       .then(async () => {
         await loadPublicGuestAccess();
-        if (adminUnlocked) {
-          await loadGuestAccessTools();
-        }
         await loadGallery();
       })
       .catch(error => {

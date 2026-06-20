@@ -38,6 +38,16 @@ If you use a specific key:
 ssh -i ~/.ssh/<keyfile> patgs@<server-ip>
 ```
 
+Verified local key for this workstation on Windows:
+
+- `C:\Users\patgs\.ssh\key_file_server_pgs`
+
+PowerShell example:
+
+```powershell
+ssh -i "$HOME\.ssh\key_file_server_pgs" patgs@62.238.25.85
+```
+
 ### Basic verification after login
 
 ```bash
@@ -68,6 +78,81 @@ sudo systemctl status nginx
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+## Domain and HTTPS
+
+The live server is currently configured for:
+
+- `ourbigday.space`
+- `www.ourbigday.space`
+
+DNS points to the Hetzner IPv4 `62.238.25.85`.
+
+### Issued certificate
+
+Let's Encrypt was installed directly on the server via Certbot.
+
+Current certificate files:
+
+- `/etc/letsencrypt/live/ourbigday.space/fullchain.pem`
+- `/etc/letsencrypt/live/ourbigday.space/privkey.pem`
+
+### Re-issue or renew manually
+
+```bash
+ssh patgs@62.238.25.85
+sudo certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email \
+  -d ourbigday.space -d www.ourbigday.space --redirect
+```
+
+### Validate HTTPS after changes
+
+```bash
+curl -fsSI https://ourbigday.space
+curl -fsSI https://www.ourbigday.space
+curl -fsS https://ourbigday.space/api/health/live
+curl -fsS https://ourbigday.space/api/health
+```
+
+### Renewals
+
+Certbot installed a scheduled renewal task on the server.
+If the domain or proxy setup changes later, re-run Certbot after confirming that:
+
+- DNS still points at the server
+- port 80 is reachable from the internet
+- Nginx still proxies to `127.0.0.1:3000`
+
+## Firewall
+
+The live server now uses UFW with a deny-by-default inbound policy.
+
+Allowed inbound ports:
+
+- `22/tcp` for SSH
+- `80/tcp` for HTTP and Certbot validation
+- `443/tcp` for HTTPS
+
+Relevant checks:
+
+```bash
+sudo ufw status verbose
+sudo ss -tulpn
+```
+
+### Why this matters
+
+This reduces the exposed attack surface to the minimum needed for the app and administration.
+Any accidental listener on another port stays hidden unless explicitly opened.
+
+## Nginx hardening
+
+The active Nginx config was tightened to:
+
+- disable the version banner with `server_tokens off;`
+- allow only `TLSv1.2` and `TLSv1.3`
+
+The site still proxies to `127.0.0.1:3000` and continues to use Certbot-managed HTTPS.
 
 ### Inspect runtime files
 
@@ -178,8 +263,7 @@ Expected values:
 - `DATA_DIR=/var/www/hochzeit/data`
 - `STORAGE_DIR=/var/www/hochzeit/storage`
 - `EXPORTS_DIR=/var/www/hochzeit/data/exports`
-- `RCLONE_REMOTE=<configured-remote>:<bucket-or-path>`
-- `RCLONE_PREFIX=wedding-camera-roll`
+- `BACKUP_ROOT=/var/backups/wedding-camera-roll`
 
 ### Test backup manually
 
@@ -195,16 +279,13 @@ journalctl -u wedding-camera-roll-backup.service -n 100 --no-pager
 `ops/backup-rclone.sh` currently does the following:
 
 - writes a backup manifest JSON with timestamp and disk-free info
-- syncs `data/` into `latest/data`
-- syncs `storage/` into `latest/storage`
-- syncs `data/exports/` into `latest/exports` if present
-- writes changed or deleted previous files into `history/<timestamp>/...`
+- mirrors `data/` into `/var/backups/wedding-camera-roll/latest/data`
+- mirrors `storage/` into `/var/backups/wedding-camera-roll/latest/storage`
+- mirrors `data/exports/` into `/var/backups/wedding-camera-roll/latest/exports` if present
+- overwrites the previous backup on each weekly run
 - excludes SQLite WAL and SHM sidecar files from backup copies
 
-This means the backup target contains:
-
-- a current mirror under `latest/`
-- point-in-time history under `history/<timestamp>/`
+This means the backup target contains only the latest snapshot.
 
 ## Restore Procedure
 
