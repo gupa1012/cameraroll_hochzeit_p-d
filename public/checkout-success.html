@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buchung bestätigt · Wedding Camera Roll</title>
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero">
+      <div class="hero-panel">
+        <div class="hero-content stack">
+          <span class="eyebrow">Wedding Camera Roll</span>
+          <h1 id="checkout-title">Zahlung wird bestätigt</h1>
+          <p id="checkout-status" class="muted" aria-live="polite">Einen Moment bitte – wir richten euren privaten Space ein.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="checkout-access" class="panel stack hidden" aria-live="polite">
+      <span class="eyebrow">Euer Space ist bereit</span>
+      <h2>Willkommen bei Wedding Camera Roll</h2>
+      <p class="muted">Speichert diese Angaben jetzt sicher. Eine Bestätigungsmail wird vor dem öffentlichen Start zusätzlich eingerichtet.</p>
+      <div class="success-grid">
+        <div class="success-block">
+          <span class="success-label">Privater Link für eure Gäste</span>
+          <a id="guest-url" class="success-link" href="#" target="_blank" rel="noreferrer"></a>
+          <div class="action-row compact-actions">
+            <button id="copy-guest-url" class="secondary" type="button">Link kopieren</button>
+            <a id="open-space" class="button secondary" href="#" target="_blank" rel="noreferrer">Space öffnen</a>
+          </div>
+        </div>
+        <div class="success-block">
+          <span class="success-label">Passwort für den Brautpaar-Bereich</span>
+          <code id="admin-password" class="secret-value"></code>
+          <div class="action-row compact-actions">
+            <button id="copy-admin-password" class="secondary" type="button">Passwort kopieren</button>
+          </div>
+        </div>
+        <div class="success-block qr-block">
+          <span class="success-label">QR-Code für eure Gäste</span>
+          <img id="qr-code" class="qr-preview-image" alt="QR-Code für den privaten Gastzugang" />
+          <div class="action-row compact-actions">
+            <a id="download-qr" class="button secondary" href="#" download="wedding-camera-roll-qr.png">QR-Code speichern</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="page-shell site-footer-inner">
+      <div class="site-footer-copy">Wedding Camera Roll · private Eventgalerien mit QR-Upload</div>
+      <nav class="footer-nav" aria-label="Rechtliches und Hilfe">
+        <a class="footer-link" href="/impressum.html">Impressum</a>
+        <a class="footer-link" href="/agb.html">AGB</a>
+        <a class="footer-link" href="/datenschutz.html">Datenschutzerklärung</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    const title = document.getElementById('checkout-title');
+    const status = document.getElementById('checkout-status');
+    const accessPanel = document.getElementById('checkout-access');
+    const providerSessionId = new URLSearchParams(window.location.search).get('session_id') || '';
+    let accessState = null;
+
+    function showError(message) {
+      title.textContent = 'Zugang nicht verfügbar';
+      status.textContent = message;
+      status.className = 'status error';
+    }
+
+    async function copy(value, successMessage) {
+      try {
+        await navigator.clipboard.writeText(value);
+        status.textContent = successMessage;
+        status.className = 'status success';
+      } catch {
+        status.textContent = 'Kopieren hat nicht funktioniert. Bitte kopiert die Angabe manuell.';
+        status.className = 'status error';
+      }
+    }
+
+    function renderAccess(payload) {
+      title.textContent = 'Zahlung bestätigt';
+      status.textContent = 'Euer privater Space ist bereit.';
+      status.className = 'status success';
+      accessPanel.classList.remove('hidden');
+
+      const guestUrl = document.getElementById('guest-url');
+      guestUrl.href = payload.guestUrl;
+      guestUrl.textContent = payload.guestUrl;
+      document.getElementById('open-space').href = payload.guestUrl;
+      document.getElementById('admin-password').textContent = accessState.adminPassword;
+      document.getElementById('qr-code').src = payload.qrCodeDataUrl;
+      document.getElementById('download-qr').href = payload.qrCodeDataUrl;
+
+      document.getElementById('copy-guest-url').addEventListener('click', () => copy(payload.guestUrl, 'Privater Link kopiert.'));
+      document.getElementById('copy-admin-password').addEventListener('click', () => copy(accessState.adminPassword, 'Passwort kopiert.'));
+    }
+
+    async function loadAccess(attempt = 0) {
+      if (!providerSessionId) {
+        showError('Die Stripe-Buchungsnummer fehlt. Bitte kehrt über die Buchungsbestätigung zurück.');
+        return;
+      }
+
+      try {
+        const rawState = sessionStorage.getItem(`checkout:${providerSessionId}`);
+        accessState = rawState ? JSON.parse(rawState) : null;
+      } catch {
+        accessState = null;
+      }
+
+      if (!accessState?.accessToken || !accessState?.guestToken || !accessState?.adminPassword) {
+        showError('Öffnet diese Seite bitte in demselben Browser, in dem ihr die Buchung begonnen habt.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/checkout/access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            providerSessionId,
+            accessToken: accessState.accessToken,
+            guestToken: accessState.guestToken
+          })
+        });
+        const payload = await response.json();
+
+        if (response.status === 202 && attempt < 20) {
+          status.textContent = 'Die Zahlung wird noch bestätigt. Das dauert normalerweise nur wenige Sekunden.';
+          setTimeout(() => loadAccess(attempt + 1), 1500);
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(payload.error || 'Der Space konnte nicht bereitgestellt werden.');
+        }
+
+        sessionStorage.removeItem(`checkout:${providerSessionId}`);
+        renderAccess(payload);
+      } catch (error) {
+        showError(error.message || 'Der Space konnte nicht bereitgestellt werden.');
+      }
+    }
+
+    loadAccess();
+  </script>
+</body>
+</html>

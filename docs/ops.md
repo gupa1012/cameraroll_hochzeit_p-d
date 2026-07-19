@@ -229,13 +229,43 @@ Also confirm externally:
 - `http://<server-ip>/`
 - `http://<server-ip>/api/health/live`
 
-## Backup Setup
+## Production Backup: Hetzner Cloud Backups
+
+The production server uses the managed Hetzner Cloud Backup feature as its primary backup. It was enabled on 2026-07-19 and the first backup completed successfully.
+
+This protects the full virtual server, including the application, database, and image storage, without consuming additional disk space on the server itself.
+
+The former on-server backup service is intentionally disabled:
+
+- `wedding-camera-roll-backup.timer` is `disabled` and `inactive`
+- `/var/backups/wedding-camera-roll` was removed after the managed backup completed
+- the removal reclaimed about 9.4 GB; the server had 24 GB free (36% used) afterwards
+
+### Routine checks
+
+- In Hetzner Cloud Console, verify that a recent backup exists before maintenance or major deploys.
+- Keep the backup feature enabled for the production server.
+- Create a separate manual snapshot before risky infrastructure migrations or major releases.
+- Test a restore by creating a temporary server from a backup before relying on this process for customer data.
+
+### Primary restore procedure
+
+1. In Hetzner Cloud Console, open the affected server and its **Backups** section.
+2. Create a new temporary server from the most recent suitable backup.
+3. Verify its application health endpoint, database, and a representative photo space before switching production traffic.
+4. Reassign or update the production IP/DNS only after validation.
+
+Do not restore directly over the live server without first validating a separately created recovery server.
+
+## Optional Second Backup: rclone
 
 The repository already contains the backup scripts:
 
 - `ops/backup-rclone.sh`
 - `ops/install-backup-timer.sh`
 - `ops/backup-rclone.env.example`
+
+They are **not active in production**. They remain an optional second copy for a future 3-2-1 backup strategy outside Hetzner.
 
 ### Install the systemd timer on the server
 
@@ -263,31 +293,42 @@ Expected values:
 - `DATA_DIR=/var/www/hochzeit/data`
 - `STORAGE_DIR=/var/www/hochzeit/storage`
 - `EXPORTS_DIR=/var/www/hochzeit/data/exports`
-- `BACKUP_ROOT=/var/backups/wedding-camera-roll`
+- `RCLONE_REMOTE=<remote>:<bucket-or-root>` (required)
+- `RCLONE_PREFIX=wedding-camera-roll`
 
-### Test backup manually
+The remote must be configured for the user running the systemd service (currently `root`). Verify it without printing credentials:
+
+```bash
+sudo rclone listremotes
+sudo rclone lsd <remote>:
+```
+
+### Test the optional rclone backup manually
 
 ```bash
 sudo systemctl start wedding-camera-roll-backup.service
 sudo systemctl status wedding-camera-roll-backup.service
 sudo systemctl status wedding-camera-roll-backup.timer
 journalctl -u wedding-camera-roll-backup.service -n 100 --no-pager
+sudo rclone lsf <remote>:<bucket-or-root>/wedding-camera-roll/latest --recursive
 ```
 
-## Backup Behavior
+## Optional rclone Backup Behavior
 
 `ops/backup-rclone.sh` currently does the following:
 
 - writes a backup manifest JSON with timestamp and disk-free info
-- mirrors `data/` into `/var/backups/wedding-camera-roll/latest/data`
-- mirrors `storage/` into `/var/backups/wedding-camera-roll/latest/storage`
-- mirrors `data/exports/` into `/var/backups/wedding-camera-roll/latest/exports` if present
-- overwrites the previous backup on each weekly run
-- excludes SQLite WAL and SHM sidecar files from backup copies
+- mirrors `data/` into `<remote>/<prefix>/latest/data`
+- mirrors `storage/` into `<remote>/<prefix>/latest/storage`
+- mirrors `data/exports/` into `<remote>/<prefix>/latest/exports` if present
+- uploads `backup-manifest.json` to the same remote location after successful data syncs
+- overwrites the previous remote snapshot on each weekly run
+- fails the systemd service if `RCLONE_REMOTE` or a working `rclone` installation is missing
+- excludes SQLite WAL and SHM sidecar files from the remote copy
 
-This means the backup target contains only the latest snapshot.
+This means the remote target contains only the latest snapshot. It is intentionally an offsite copy; it must not be stored on the same server disk as the live data.
 
-## Restore Procedure
+## Optional rclone Restore Procedure
 
 There was no formal restore runbook before; use this one.
 

@@ -9,234 +9,292 @@
 </head>
 <body>
   <main class="page-shell">
-    <section class="hero">
+    <section class="hero hero-commercial">
       <div class="hero-panel">
         <div class="hero-split">
           <div class="hero-content stack">
-            <span class="eyebrow">Private Hochzeitsgalerien</span>
-            <h1>Legt euren Hochzeits-Space direkt selbst an.</h1>
-            <p>Wedding Camera Roll sammelt Handyfotos direkt von euren Gästen, ohne App-Download und ohne öffentliche Galerie. Heute wird euer Space direkt freigeschaltet, später kommt an genau dieser Stelle Stripe dazwischen.</p>
+            <span class="eyebrow">Private Hochzeitsfotos</span>
+            <h1>Alle Fotos eurer Gäste. Sicher an einem Ort.</h1>
+            <p>Am Tag danach kein WhatsApp-Chaos, keine verlorenen Handyfotos und keine öffentliche Galerie. Gäste scannen euren QR-Code und laden ihre Originaldateien direkt im Browser hoch.</p>
             <div class="hero-actions">
-              <a class="button primary" href="#space-anlegen">Hochzeit anlegen</a>
-              <button id="toggle-learn-more-button" class="secondary" type="button">Mehr erfahren</button>
-              <a class="button ghost" href="/demo" target="_blank" rel="noreferrer">Demo ausprobieren</a>
+              <a class="button primary" href="#space-anlegen">Ab 39 € buchen</a>
+              <a class="button ghost" href="/demo" target="_blank" rel="noreferrer">Live-Demo ansehen</a>
             </div>
-            <div class="metrics">
+            <div class="metrics commercial-metrics">
               <div class="metric">
-                <span class="muted">Zugriff für Gäste</span>
-                <strong>Privater Link nur für eure Gäste</strong>
+                <span class="muted">Für Gäste</span>
+                <strong>Ohne App</strong>
               </div>
               <div class="metric">
-                <span class="muted">Upload-Erlebnis</span>
-                <strong>Direkt im Browser</strong>
+                <span class="muted">Für euch</span>
+                <strong>Alle Originale</strong>
               </div>
               <div class="metric">
-                <span class="muted">Brautpaar-Zugang</span>
-                <strong>Separat geschützt</strong>
+                <span class="muted">Zugriff</span>
+                <strong>Nur geheimer Link</strong>
               </div>
             </div>
           </div>
 
-          <article id="space-anlegen" class="hero-form panel stack">
-            <span class="eyebrow">Hochzeit anlegen</span>
-            <h2>Euren Space jetzt vorbereiten</h2>
-            <p class="muted">Namen, Datum, E-Mail-Adresse und euer eigenes Passwort reichen für den Start. Danach bekommt ihr sofort euren privaten Link nur für eure Gäste inklusive QR-Code.</p>
-            <div class="field">
-              <label for="partner-one-name">Erster Vorname</label>
-              <input id="partner-one-name" type="text" placeholder="z. B. Desirée" />
-            </div>
-            <div class="field">
-              <label for="partner-two-name">Zweiter Vorname</label>
-              <input id="partner-two-name" type="text" placeholder="z. B. Patrick" />
-            </div>
-            <div class="field">
-              <label for="wedding-date">Hochzeitsdatum</label>
-              <input id="wedding-date" type="date" />
-            </div>
-            <div class="field">
-              <label for="owner-email">E-Mail-Adresse</label>
-              <input id="owner-email" type="email" placeholder="brautpaar@example.com" />
-            </div>
-            <div class="field">
-              <label for="admin-password-setup">Passwort für den Brautpaar-Bereich</label>
-              <input id="admin-password-setup" type="password" minlength="8" placeholder="Mindestens 8 Zeichen" autocomplete="new-password" />
-            </div>
-            <div class="action-row">
-              <button id="create-space-button" class="primary" type="button">Space anlegen</button>
-              <a class="button ghost" href="/demo" target="_blank" rel="noreferrer">Direkt Demo starten</a>
-            </div>
-            <p class="subtle-note">Der Space-Name wird automatisch als Name 1 &amp; Name 2 - Datum erstellt.</p>
-            <p id="create-space-status" class="status muted"></p>
-            <div class="trust-mini-grid">
-              <div class="mini-trust-item">Ohne App für Gäste</div>
-              <div class="mini-trust-item">Sofort freigeschaltet</div>
-              <div class="mini-trust-item">Eigenes Passwort</div>
-            </div>
-            <section id="create-space-result" class="success-card hidden" aria-live="polite">
-              <div class="success-head">
-                <span class="eyebrow">Space bereit</span>
-                <h3>Euer Zugang ist erstellt</h3>
-                <p class="muted">Von hier aus könnt ihr direkt den privaten Link nur für eure Gäste kopieren, den Space öffnen oder eure Zugangsdaten sichern.</p>
+          <article class="product-preview stack" aria-label="So sieht Wedding Camera Roll aus">
+            <div class="preview-frame">
+              <div class="preview-topbar">
+                <span></span><span></span><span></span>
               </div>
-              <div class="success-grid">
-                <div class="success-block">
-                  <span class="success-label">Privater Link nur für eure Gäste</span>
-                  <a id="result-guest-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
-                  <div class="action-row compact-actions">
-                    <button id="copy-guest-url-button" class="secondary" type="button">Link kopieren</button>
-                    <button id="share-guest-url-button" class="ghost hidden" type="button">Teilen</button>
-                    <a id="open-space-button" class="button secondary" href="#" target="_blank" rel="noreferrer">Space öffnen</a>
-                  </div>
+              <div class="preview-content">
+                <span class="preview-rings">💍</span>
+                <h2>Desirée &amp; Patrick</h2>
+                <p>Gäste scannen und laden ihre Momente direkt hoch.</p>
+                <div class="preview-upload-zone">
+                  <span class="drop-icon">📸</span>
+                  <strong>Medien hochladen</strong>
+                  <small>Galerie oder Kamera öffnen</small>
                 </div>
-                <div class="success-block">
-                  <span class="success-label">Brautpaar-Bereich</span>
-                  <code id="result-admin-password" class="secret-value">Wird geladen…</code>
-                  <div class="action-row compact-actions">
-                    <button id="copy-admin-password-button" class="secondary" type="button">Passwort kopieren</button>
-                  </div>
-                </div>
-                <div class="success-block">
-                  <span class="success-label">Hinterlegte E-Mail</span>
-                  <code id="result-owner-email" class="secret-value">Wird geladen…</code>
-                  <p class="subtle-note">Diese Adresse ist später die Basis für Bestätigungsmail, Rechnung und Zugangskommunikation.</p>
-                </div>
-                <div class="success-block qr-block">
-                  <span class="success-label">QR-Code für eure Gäste</span>
-                  <img id="result-qr-image" class="qr-preview-image" alt="QR-Code für den privaten Gastzugang" />
-                  <div class="action-row compact-actions">
-                    <a id="download-qr-button" class="button secondary" href="#" download="wedding-camera-roll-qr.png">QR-Code speichern</a>
-                  </div>
+                <div class="preview-gallery-grid" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span><span></span><span></span>
                 </div>
               </div>
-            </section>
-            <p class="subtle-note">Stripe und Bestätigungsmail werden hier später zwischengeschaltet. Für den MVP erfolgt die Freischaltung sofort.</p>
+            </div>
+            <div class="preview-note">Großer mobiler Upload-Bereich, ruhige Galerie und geschützter Brautpaar-Bereich.</div>
           </article>
-        </div>
-
-        <div class="operator-link-row">
-          <a class="quiet-link" href="/operator">Betreiber-Backoffice</a>
         </div>
       </div>
     </section>
 
-    <details id="learn-more-panel" class="section panel stack">
-      <summary class="quiet-link" style="width:fit-content; cursor:pointer;">Mehr erfahren</summary>
+    <section id="tarife" class="section pricing-section">
+      <div class="section-heading stack compact-stack">
+        <span class="eyebrow">Preise</span>
+        <h2>Einmalig zahlen. Die Erinnerungen bleiben privat.</h2>
+        <p class="muted">Kein Abo, keine App für Gäste und keine öffentliche Galerie. Alle Preise gemäß § 19 UStG ohne ausgewiesene Umsatzsteuer.</p>
+      </div>
+      <div class="pricing-grid">
+        <article class="pricing-card stack">
+          <span class="eyebrow">Basic</span>
+          <div class="pricing-price">39 € <small>einmalig</small></div>
+          <ul class="pricing-list">
+            <li>20 GB Speicher</li>
+            <li>6 Monate Laufzeit</li>
+            <li>Privater Gastlink und QR-Code</li>
+            <li>ZIP-Export aller Originale</li>
+          </ul>
+          <a class="button secondary" href="#space-anlegen" data-plan-link="basic">Basic wählen</a>
+        </article>
+        <article class="pricing-card pricing-card-featured stack">
+          <span class="pricing-badge">Beliebter</span>
+          <span class="eyebrow">Premium</span>
+          <div class="pricing-price">69 € <small>einmalig</small></div>
+          <ul class="pricing-list">
+            <li>100 GB Speicher</li>
+            <li>12 Monate Laufzeit</li>
+            <li>Privater Gastlink und QR-Code</li>
+            <li>ZIP-Export aller Originale</li>
+            <li>Mehr Luft für viele Gäste und Videos</li>
+          </ul>
+          <a class="button primary" href="#space-anlegen" data-plan-link="premium">Premium wählen</a>
+        </article>
+      </div>
+    </section>
 
-      <section class="grid-3">
-        <article class="card stack">
-          <h2>Geschlossen statt auffindbar</h2>
-          <p class="muted">Es gibt keine öffentliche Übersicht und keine langen erratbaren Pfade. Ohne euren privaten Link nur für eure Gäste oder den dazugehörigen QR-Code kommt niemand an Galerie, Upload oder Vorschaubilder.</p>
-        </article>
-        <article class="card stack">
-          <h2>Für echte Hochzeiten gebaut</h2>
-          <p class="muted">Gäste laden Bilder schnell vom Handy hoch, das Brautpaar verwaltet seinen eigenen Space separat, und das Backoffice behält systemweit den Überblick.</p>
-        </article>
-        <article class="card stack">
-          <h2>Direkter Demo-Einstieg</h2>
-          <p class="muted">Über die Demo springt ihr sofort in einen echten Beispiel-Space, könnt erste Bilder hochladen und das gesamte Erlebnis direkt ausprobieren.</p>
-        </article>
-      </section>
+    <section class="section grid-3 process-grid">
+      <div class="section-heading stack compact-stack process-heading">
+        <span class="eyebrow">So funktioniert es</span>
+        <h2>Vom QR-Code zur kompletten Erinnerungsgalerie</h2>
+      </div>
+      <article class="card stack process-card">
+        <span class="process-step">1</span>
+        <h2>QR-Code ausstellen</h2>
+        <p class="muted">Stellt den Code auf Tische, in die Papeterie oder auf die Leinwand. Gäste brauchen kein Konto und keine App.</p>
+      </article>
+      <article class="card stack process-card">
+        <span class="process-step">2</span>
+        <h2>Gäste laden Momente hoch</h2>
+        <p class="muted">Mehrere Fotos und Videos auf einmal, optional mit kurzer Nachricht oder Namen. Perfekt für iPhone und Android.</p>
+      </article>
+      <article class="card stack process-card">
+        <span class="process-step">3</span>
+        <h2>Originale sichern</h2>
+        <p class="muted">Ihr behaltet die hochgeladenen Originaldateien und ladet am Ende alles zentral als ZIP herunter.</p>
+      </article>
+    </section>
 
-      <section class="section trust-band" aria-label="Vertrauen und Sicherheit">
-        <div class="trust-band-item">
-          <strong>Keine App nötig</strong>
-          <span>Gäste öffnen den Space direkt im Browser auf iPhone oder Android.</span>
+    <section class="section comparison-section">
+      <div class="comparison-panel panel">
+        <div class="section-heading stack compact-stack">
+          <span class="eyebrow">Warum nicht WhatsApp?</span>
+          <h2>Weil Hochzeitsfotos mehr verdienen als Chat-Qualität.</h2>
         </div>
-        <div class="trust-band-item">
-          <strong>Privater Link nur für eure Gäste</strong>
-          <span>Kein öffentliches Verzeichnis, keine offene Galerie und keine sichtbare Gästeliste.</span>
+        <div class="comparison-grid">
+          <div class="comparison-item">
+            <strong>WhatsApp-Gruppe</strong>
+            <span>komprimierte Bilder, unübersichtlich, Download-Chaos</span>
+          </div>
+          <div class="comparison-item comparison-item-highlight">
+            <strong>Wedding Camera Roll</strong>
+            <span>Originaldateien, ein zentraler privater Ort, sauberer ZIP-Export</span>
+          </div>
         </div>
-        <div class="trust-band-item">
-          <strong>Brautpaar separat geschützt</strong>
-          <span>Uploads bleiben für Gäste einfach, während euer geschützter Bereich separat gesichert ist.</span>
+      </div>
+    </section>
+
+    <section class="section trust-band" aria-label="Vertrauen und Sicherheit">
+      <div class="trust-band-item">
+        <strong>Keine App nötig</strong>
+        <span>QR-Code scannen und direkt im Browser auf iPhone oder Android hochladen.</span>
+      </div>
+      <div class="trust-band-item">
+        <strong>Nur über geheimen Link</strong>
+        <span>Kein öffentliches Verzeichnis, keine öffentliche Galerie und keine Suchmaschinen-Indizierung.</span>
+      </div>
+      <div class="trust-band-item">
+        <strong>Originale bleiben erhalten</strong>
+        <span>Vorschaubilder werden zusätzlich erzeugt; hochgeladene Originaldateien werden nicht ersetzt.</span>
+      </div>
+      <div class="trust-band-item">
+        <strong>Geschützter Brautpaar-Bereich</strong>
+        <span>Fotos ordnen, archivieren, wiederherstellen und den kompletten Export auslösen.</span>
+      </div>
+    </section>
+
+    <section class="section demo-band">
+      <div class="demo-card panel">
+        <div>
+          <span class="eyebrow">Sofort ausprobieren</span>
+          <h2>Die echte Gäste-Oberfläche ansehen</h2>
+          <p class="muted">Öffnet die Live-Demo und testet den Upload- und Galerie-Ablauf so, wie ihn eure Gäste am Hochzeitstag sehen.</p>
         </div>
-        <div class="trust-band-item">
-          <strong>Für den Eventtag gebaut</strong>
-          <span>Wenig Schritte, große Buttons, schnelle Handy-Nutzung und sofortige Freischaltung.</span>
+        <a class="button primary" href="/demo" target="_blank" rel="noreferrer">Demo starten</a>
+      </div>
+    </section>
+
+    <section id="space-anlegen" class="section booking-section">
+      <div class="booking-layout">
+        <div class="booking-copy stack">
+          <span class="eyebrow">Buchung</span>
+          <h2>Euren privaten Space sichern</h2>
+          <p class="muted">Tragt eure Namen, euer Hochzeitsdatum und eure E-Mail-Adresse ein und wählt euren Tarif. Nach der sicheren Zahlung erhaltet ihr den privaten Link und den QR-Code.</p>
+          <div class="booking-guarantees">
+            <span>Kein Abo</span>
+            <span>Sichere Zahlung über Stripe</span>
+            <span>Privater Zugang für eure Gäste</span>
+          </div>
         </div>
-      </section>
 
-      <section id="produktueberblick" class="section grid-2">
-        <article class="panel stack">
-          <span class="eyebrow">So läuft es für Gäste</span>
-          <h2>Scannen, hochladen, mitfeiern</h2>
-          <p class="muted">Im Space selbst steht das Sammeln der Fotos im Mittelpunkt: große mobile Upload-Fläche, mehrere Bilder am Stück, kurze Grüße dazu und eine ruhige Galerie.</p>
+        <article class="hero-form panel stack booking-form-card">
+          <div class="field">
+            <label for="partner-one-name">Erster Vorname</label>
+            <input id="partner-one-name" type="text" placeholder="z. B. Desirée" autocomplete="given-name" />
+          </div>
+          <div class="field">
+            <label for="partner-two-name">Zweiter Vorname</label>
+            <input id="partner-two-name" type="text" placeholder="z. B. Patrick" autocomplete="given-name" />
+          </div>
+          <div class="field">
+            <label for="wedding-date">Hochzeitsdatum</label>
+            <input id="wedding-date" type="date" />
+          </div>
+          <div class="field">
+            <label for="owner-email">E-Mail-Adresse</label>
+            <input id="owner-email" type="email" placeholder="brautpaar@example.com" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="admin-password-setup">Passwort für den Brautpaar-Bereich</label>
+            <input id="admin-password-setup" type="password" minlength="8" placeholder="Mindestens 8 Zeichen" autocomplete="new-password" />
+          </div>
+          <div class="field">
+            <label for="plan">Euer Tarif</label>
+            <select id="plan">
+              <option value="basic">Basic · 39 € einmalig · 20 GB · 6 Monate</option>
+              <option value="premium">Premium · 69 € einmalig · 100 GB · 12 Monate</option>
+            </select>
+          </div>
+          <div class="action-row">
+            <button id="create-space-button" class="primary" type="button">Sicher zur Zahlung</button>
+          </div>
+          <p class="subtle-note">Der Space-Name wird automatisch als Name 1 &amp; Name 2 - Datum erstellt.</p>
+          <p id="create-space-status" class="status muted"></p>
+          <div class="trust-mini-grid">
+            <div class="mini-trust-item">Ohne App für Gäste</div>
+            <div class="mini-trust-item">Sicher online bezahlen</div>
+            <div class="mini-trust-item">Originale bleiben erhalten</div>
+          </div>
+          <section id="create-space-result" class="success-card hidden" aria-live="polite">
+            <div class="success-head">
+              <span class="eyebrow">Space bereit</span>
+              <h3>Euer Zugang ist erstellt</h3>
+              <p class="muted">Von hier aus könnt ihr direkt den privaten Link nur für eure Gäste kopieren, den Space öffnen oder eure Zugangsdaten sichern.</p>
+            </div>
+            <div class="success-grid">
+              <div class="success-block">
+                <span class="success-label">Privater Link nur für eure Gäste</span>
+                <a id="result-guest-url" class="success-link" href="#" target="_blank" rel="noreferrer">Wird geladen…</a>
+                <div class="action-row compact-actions">
+                  <button id="copy-guest-url-button" class="secondary" type="button">Link kopieren</button>
+                  <button id="share-guest-url-button" class="ghost hidden" type="button">Teilen</button>
+                  <a id="open-space-button" class="button secondary" href="#" target="_blank" rel="noreferrer">Space öffnen</a>
+                </div>
+              </div>
+              <div class="success-block">
+                <span class="success-label">Brautpaar-Bereich</span>
+                <code id="result-admin-password" class="secret-value">Wird geladen…</code>
+                <div class="action-row compact-actions">
+                  <button id="copy-admin-password-button" class="secondary" type="button">Passwort kopieren</button>
+                </div>
+              </div>
+              <div class="success-block">
+                <span class="success-label">Hinterlegte E-Mail</span>
+                <code id="result-owner-email" class="secret-value">Wird geladen…</code>
+              </div>
+              <div class="success-block qr-block">
+                <span class="success-label">QR-Code für eure Gäste</span>
+                <img id="result-qr-image" class="qr-preview-image" alt="QR-Code für den privaten Gastzugang" />
+                <div class="action-row compact-actions">
+                  <a id="download-qr-button" class="button secondary" href="#" download="wedding-camera-roll-qr.png">QR-Code speichern</a>
+                </div>
+              </div>
+            </div>
+          </section>
+          <p class="subtle-note">Die Zahlung wird über Stripe verarbeitet. Den privaten Link erhaltet ihr direkt nach der Zahlungsbestätigung.</p>
         </article>
-        <article class="panel stack">
-          <span class="eyebrow">Was ihr direkt bekommt</span>
-          <h2>Privater Link und Brautpaar-Zugang</h2>
-          <p class="muted">Direkt nach dem Anlegen erhaltet ihr euren privaten Link nur für eure Gäste inklusive QR-Code sowie das Passwort für euren geschützten Brautpaar-Bereich.</p>
-        </article>
-      </section>
+      </div>
+    </section>
 
-      <section class="section grid-3 process-grid">
-        <article class="card stack process-card">
-          <span class="process-step">1</span>
-          <h2>Space anlegen</h2>
-          <p class="muted">Feiername, E-Mail und eigenes Passwort eintragen. Der Space wird sofort erstellt, später kommt hier der Stripe-Schritt dazwischen.</p>
-        </article>
-        <article class="card stack process-card">
-          <span class="process-step">2</span>
-          <h2>Link oder QR teilen</h2>
-          <p class="muted">Das Brautpaar verteilt den privaten Link nur für eure Gäste oder bindet ihn in Papeterie, Website und QR-Code ein.</p>
-        </article>
-        <article class="card stack process-card">
-          <span class="process-step">3</span>
-          <h2>Am Tag Fotos sammeln</h2>
-          <p class="muted">Gäste laden Bilder direkt vom Handy hoch, während ihr den geschützten Bereich für Ordnung, Export und Überblick nutzt.</p>
-        </article>
-      </section>
-
-      <section class="section grid-2">
-        <article class="panel stack">
-          <span class="eyebrow">Geeignet für</span>
-          <h2>Hochzeiten, Geburtstage, Firmenfeiern</h2>
-          <p class="muted">Die Technik ist bewusst event-neutral aufgebaut. Jede Feier erhält ihren eigenen isolierten Raum mit eigener Verwaltung, eigener Medienablage und eigenem privaten Gastzugang.</p>
-        </article>
-        <article class="panel stack">
-          <span class="eyebrow">Heute schon nutzbar</span>
-          <h2>Demo-Betrieb und echte Events</h2>
-          <p class="muted">Die Demo zeigt sofort das echte Erlebnis. Im Live-Betrieb kommen dazu QR-Druckvorlagen, ZIP-Export, Cloud-Sync und Health-Checks für stabile Events.</p>
-        </article>
-      </section>
-
-      <section class="section faq-shell" id="faq">
-        <div class="section-heading stack compact-stack faq-heading">
-          <span class="eyebrow">FAQ</span>
-          <h2>Die wichtigsten Fragen vorab</h2>
-          <p class="muted">Die häufigsten Rückfragen zum Ablauf, zum Datenschutz und zur Nutzung am Eventtag.</p>
-        </div>
-        <div class="faq-list">
-          <details class="faq-item">
-            <summary>Brauchen unsere Gäste eine App?</summary>
-            <p>Nein. Gäste öffnen einfach den privaten Link nur für eure Gäste oder scannen den QR-Code und laden ihre Fotos direkt im Browser hoch.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Kann jemand den Space einfach erraten?</summary>
-            <p>Nein. Der Zugang läuft über kurze, aber weiterhin starke private Links. Es gibt kein öffentliches Verzeichnis und keine offene Galerie.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Was bekommen wir direkt nach dem Anlegen?</summary>
-            <p>Ihr erhaltet sofort euren privaten Link nur für eure Gäste, den QR-Code und das von euch gesetzte Passwort für den geschützten Brautpaar-Bereich.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Wie wird später bezahlt?</summary>
-            <p>Der spätere Stripe-Schritt wird genau zwischen Formular und Freischaltung gesetzt. Der aktuelle MVP erstellt den Space noch direkt.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Wer darf Fotos sortieren oder entfernen?</summary>
-            <p>Das Brautpaar oder die verantwortliche Person nutzt dafür den geschützten Bereich innerhalb des jeweiligen Spaces.</p>
-          </details>
-        </div>
-      </section>
-    </details>
-
-    <p class="footer-note">Aktueller Stand: stabile Multi-Space-Basis mit Self-Service-Anlage, privaten Gastlinks und separatem Brautpaar-Bereich.</p>
+    <section class="section faq-shell" id="faq">
+      <div class="section-heading stack compact-stack faq-heading">
+        <span class="eyebrow">FAQ</span>
+        <h2>Die wichtigsten Fragen vor der Buchung</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Brauchen unsere Gäste eine App?</summary>
+          <p>Nein. Gäste scannen den QR-Code oder öffnen den geheimen Link und laden Fotos und Videos direkt im Browser hoch.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Wer kann die Galerie sehen?</summary>
+          <p>Nur Personen, die euren geheimen Gastlink oder den QR-Code kennen. Es gibt kein öffentliches Verzeichnis und die geheimen Seiten sind nicht für Suchmaschinen bestimmt.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Bleiben unsere Fotos in Originalqualität erhalten?</summary>
+          <p>Ja. Die hochgeladenen Originaldateien werden unverändert gespeichert. Vorschaubilder für die Galerie werden zusätzlich erzeugt.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Was passiert, wenn Gäste ein falsches Bild hochladen?</summary>
+          <p>Gäste können eigene Uploads auf ihrem Gerät löschen. Das Brautpaar kann im geschützten Bereich Bilder außerdem archivieren, wiederherstellen oder endgültig entfernen.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Wie kommen wir am Ende an alle Bilder?</summary>
+          <p>Im geschützten Brautpaar-Bereich könnt ihr alle Originale zentral als ZIP-Datei exportieren.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Was kostet Wedding Camera Roll?</summary>
+          <p>Basic kostet 39 € einmalig für 20 GB und 6 Monate. Premium kostet 69 € einmalig für 100 GB und 12 Monate. Es gibt kein Abo.</p>
+        </details>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
     <div class="page-shell site-footer-inner">
-      <div class="site-footer-copy">Wedding Camera Roll · private Eventgalerien mit QR-Upload</div>
+      <div class="site-footer-copy">Wedding Camera Roll · private Hochzeitsfotos mit QR-Upload</div>
       <nav class="footer-nav" aria-label="Rechtliches und Hilfe">
         <a class="footer-link" href="/impressum.html">Impressum</a>
         <a class="footer-link" href="/#faq">FAQ</a>
@@ -246,7 +304,7 @@
     </div>
   </footer>
 
-  <a class="sticky-create-cta" href="#space-anlegen">Hochzeit anlegen</a>
+  <a class="sticky-create-cta" href="#space-anlegen">Ab 39 € buchen</a>
 
   <script>
     const createSpaceButton = document.getElementById('create-space-button');
@@ -257,6 +315,7 @@
     const weddingDateInput = document.getElementById('wedding-date');
     const ownerEmailInput = document.getElementById('owner-email');
     const adminPasswordSetupInput = document.getElementById('admin-password-setup');
+    const planInput = document.getElementById('plan');
     const resultGuestUrl = document.getElementById('result-guest-url');
     const resultAdminPassword = document.getElementById('result-admin-password');
     const resultOwnerEmail = document.getElementById('result-owner-email');
@@ -266,8 +325,6 @@
     const downloadQrButton = document.getElementById('download-qr-button');
     const openSpaceButton = document.getElementById('open-space-button');
     const shareGuestUrlButton = document.getElementById('share-guest-url-button');
-    const toggleLearnMoreButton = document.getElementById('toggle-learn-more-button');
-    const learnMorePanel = document.getElementById('learn-more-panel');
     let lastCreatedSpace = null;
 
     function setStatus(message, kind = 'muted') {
@@ -290,6 +347,7 @@
       const weddingDate = weddingDateInput.value;
       const ownerEmail = ownerEmailInput.value.trim();
       const adminPassword = adminPasswordSetupInput.value;
+      const plan = planInput.value;
 
       if (partnerOneName.length < 2) {
         setStatus('Bitte gebt den ersten Vornamen für euren Space an.', 'error');
@@ -321,7 +379,7 @@
         return null;
       }
 
-      return { partnerOneName, partnerTwoName, weddingDate, ownerEmail, adminPassword };
+      return { partnerOneName, partnerTwoName, weddingDate, ownerEmail, adminPassword, plan };
     }
 
     function renderSuccess(payload) {
@@ -342,11 +400,11 @@
       const values = validateInputs();
       if (!values) return;
 
-      setStatus('Euer Space wird angelegt…');
+      setStatus('Weiterleitung zur sicheren Zahlung…');
       createSpaceButton.disabled = true;
 
       try {
-        const response = await fetch('/api/spaces', {
+        const response = await fetch('/api/checkout/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(values)
@@ -354,35 +412,29 @@
 
         const payload = await response.json();
         if (!response.ok) {
-          throw new Error(payload.error || 'Space konnte nicht angelegt werden.');
+          throw new Error(payload.error || 'Checkout konnte nicht gestartet werden.');
         }
 
-        renderSuccess(payload);
-        setStatus(`Space erfolgreich angelegt: ${payload.displayName}.`, 'success');
+        sessionStorage.setItem(`checkout:${payload.providerSessionId}`, JSON.stringify({
+          accessToken: payload.accessToken,
+          guestToken: payload.guestToken,
+          adminPassword: values.adminPassword,
+          ownerEmail: values.ownerEmail
+        }));
+        window.location.assign(payload.checkoutUrl);
       } catch (error) {
         setStatus(error.message, 'error');
-      } finally {
         createSpaceButton.disabled = false;
       }
     }
 
-    createSpaceButton.addEventListener('click', createSpace);
-    toggleLearnMoreButton.addEventListener('click', () => {
-      learnMorePanel.open = true;
-      learnMorePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('[data-plan-link]').forEach(link => {
+      link.addEventListener('click', () => {
+        planInput.value = link.dataset.planLink;
+      });
     });
 
-    function revealHashTarget() {
-      if (!window.location.hash) return;
-      const target = document.querySelector(window.location.hash);
-      if (!target) return;
-      if (learnMorePanel.contains(target)) {
-        learnMorePanel.open = true;
-      }
-      setTimeout(() => {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 30);
-    }
+    createSpaceButton.addEventListener('click', createSpace);
 
     copyGuestUrlButton.addEventListener('click', async () => {
       if (!lastCreatedSpace) return;

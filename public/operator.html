@@ -67,6 +67,14 @@
             <label for="space-admin-password">Passwort für den Brautpaar-Bereich</label>
             <input id="space-admin-password" type="password" placeholder="Mindestens 8 Zeichen" autocomplete="new-password" />
           </div>
+          <div class="field">
+            <label for="space-plan">Tarif</label>
+            <select id="space-plan">
+              <option value="basic">Basic · 39 € · 20 GB · 6 Monate</option>
+              <option value="premium">Premium · 69 € · 100 GB · 12 Monate</option>
+              <option value="legacy">Bestand / Kulanz · ohne Kontingent</option>
+            </select>
+          </div>
           <div class="action-row">
             <button id="create-space-button" class="primary" type="button">Space anlegen</button>
           </div>
@@ -300,11 +308,12 @@
             <strong>${space.displayName}</strong><br>
             <span class="muted">${space.ownerEmail}</span><br>
             <span class="muted">Public ID: ${space.publicId}</span><br>
-            <span class="muted">Erstellt: ${formatDate(space.createdAt)}</span>
+            <span class="muted">Erstellt: ${formatDate(space.createdAt)}</span><br>
+            <span class="muted">Tarif: ${escapeHtml(space.planLabel || space.plan || 'Bestand')}${space.expiresAt ? ` · Ablauf: ${formatDate(space.expiresAt)}` : ''}</span>
           </td>
           <td>${space.status}</td>
           <td>${space.activePhotoCount} aktiv · ${space.archivedPhotoCount} archiviert</td>
-          <td>${formatBytes(space.storageUsageBytes)}</td>
+          <td>${formatBytes(space.storageUsageBytes)}${space.storageLimitBytes ? ` / ${formatBytes(space.storageLimitBytes)}` : ''}</td>
           <td></td>
         `;
 
@@ -324,6 +333,8 @@
                 <span class="muted">${escapeHtml(space.ownerEmail)}</span><br>
                 <span class="muted">Public ID: ${escapeHtml(space.publicId)}</span><br>
                 <span class="muted">Status: ${escapeHtml(space.status)}</span><br>
+                <span class="muted">Tarif: ${escapeHtml(space.planLabel || space.plan || 'Bestand')}</span><br>
+                <span class="muted">Speicher: ${formatBytes(space.storageUsageBytes)}${space.storageLimitBytes ? ` / ${formatBytes(space.storageLimitBytes)}` : ''}</span><br>
                 <span class="muted">${space.activePhotoCount} aktive · ${space.archivedPhotoCount} archivierte Fotos</span>
               </div>
             </div>
@@ -395,7 +406,8 @@
         partnerTwoName: document.getElementById('space-partner-two-name').value,
         weddingDate: document.getElementById('space-wedding-date').value,
         ownerEmail: document.getElementById('space-owner-email').value,
-        adminPassword: document.getElementById('space-admin-password').value
+        adminPassword: document.getElementById('space-admin-password').value,
+        plan: document.getElementById('space-plan').value
       });
       if (!payload) return;
 
@@ -404,6 +416,7 @@
       document.getElementById('space-wedding-date').value = '';
       document.getElementById('space-owner-email').value = '';
       document.getElementById('space-admin-password').value = '';
+      document.getElementById('space-plan').value = 'basic';
       setStatus(createSpaceStatus, `Space erfolgreich angelegt: ${payload.space.displayName}.`, 'success');
       renderSecretBox('Neuer Space', [
         `Space-Name: <strong>${escapeHtml(payload.space.displayName)}</strong>`,

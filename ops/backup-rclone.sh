@@ -5,13 +5,27 @@ APP_ROOT="${APP_ROOT:-/var/www/hochzeit}"
 DATA_DIR="${DATA_DIR:-$APP_ROOT/data}"
 STORAGE_DIR="${STORAGE_DIR:-$APP_ROOT/storage}"
 EXPORTS_DIR="${EXPORTS_DIR:-$DATA_DIR/exports}"
-BACKUP_ROOT="${BACKUP_ROOT:-/var/backups/wedding-camera-roll}"
-LATEST_ROOT="$BACKUP_ROOT/latest"
 LOCK_FILE="${LOCK_FILE:-/var/lock/wedding-camera-roll-backup.lock}"
 WORK_DIR="${WORK_DIR:-/tmp/wedding-camera-roll-backup}"
+RCLONE_REMOTE="${RCLONE_REMOTE:-}"
+RCLONE_PREFIX="${RCLONE_PREFIX:-wedding-camera-roll}"
 TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-mkdir -p "$WORK_DIR" "$LATEST_ROOT" "$(dirname "$LOCK_FILE")"
+if [[ -z "$RCLONE_REMOTE" ]]; then
+  echo "RCLONE_REMOTE ist nicht konfiguriert." >&2
+  exit 1
+fi
+
+if ! command -v rclone >/dev/null 2>&1; then
+  echo "rclone ist nicht installiert oder nicht im PATH." >&2
+  exit 1
+fi
+
+RCLONE_PREFIX="${RCLONE_PREFIX#/}"
+RCLONE_PREFIX="${RCLONE_PREFIX%/}"
+REMOTE_LATEST="${RCLONE_REMOTE%/}/${RCLONE_PREFIX}/latest"
+
+mkdir -p "$WORK_DIR" "$(dirname "$LOCK_FILE")"
 exec 9>"$LOCK_FILE"
 flock -n 9 || {
   echo "Backup laeuft bereits, ueberspringe diesen Durchlauf."
@@ -28,8 +42,6 @@ if [[ ! -d "$STORAGE_DIR" ]]; then
   exit 1
 fi
 
-mkdir -p "$LATEST_ROOT"
-
 MANIFEST_PATH="$WORK_DIR/backup-manifest.json"
 cat > "$MANIFEST_PATH" <<EOF
 {
@@ -38,20 +50,23 @@ cat > "$MANIFEST_PATH" <<EOF
   "dataDir": "$DATA_DIR",
   "storageDir": "$STORAGE_DIR",
   "exportsDir": "$EXPORTS_DIR",
-  "backupRoot": "$BACKUP_ROOT",
+  "remoteLatest": "$REMOTE_LATEST",
   "hostname": "$(hostname)",
   "diskFreeHuman": "$(df -h "$APP_ROOT" | awk 'NR==2 {print $4}')"
 }
 EOF
 
-install -m 0644 "$MANIFEST_PATH" "$LATEST_ROOT/backup-manifest.json"
-
-rsync -a --delete --exclude "*.sqlite-shm" --exclude "*.sqlite-wal" "$DATA_DIR/" "$LATEST_ROOT/data/"
-rsync -a --delete "$STORAGE_DIR/" "$LATEST_ROOT/storage/"
+rclone sync "$DATA_DIR/" "$REMOTE_LATEST/data" \
+  --exclude "*.sqlite-shm" \
+  --exclude "*.sqlite-wal"
+rclone sync "$STORAGE_DIR/" "$REMOTE_LATEST/storage"
 
 if [[ -d "$EXPORTS_DIR" ]]; then
-  mkdir -p "$LATEST_ROOT/exports"
-  rsync -a --delete "$EXPORTS_DIR/" "$LATEST_ROOT/exports/"
+  rclone sync "$EXPORTS_DIR/" "$REMOTE_LATEST/exports"
+else
+  rclone purge "$REMOTE_LATEST/exports" || true
 fi
 
-echo "Backup abgeschlossen: $TIMESTAMP"
+rclone copyto "$MANIFEST_PATH" "$REMOTE_LATEST/backup-manifest.json"
+
+echo "Offsite-Backup abgeschlossen: $TIMESTAMP"

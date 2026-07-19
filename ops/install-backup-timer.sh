@@ -20,7 +20,11 @@ APP_ROOT=/var/www/hochzeit
 DATA_DIR=/var/www/hochzeit/data
 STORAGE_DIR=/var/www/hochzeit/storage
 EXPORTS_DIR=/var/www/hochzeit/data/exports
-BACKUP_ROOT=/var/backups/wedding-camera-roll
+
+# Required: configure a working rclone remote before starting the timer.
+# Example: hetzner-s3:hochzeit-backups
+RCLONE_REMOTE=
+RCLONE_PREFIX=wedding-camera-roll
 EOF
   chmod 0640 "$ENV_FILE"
 fi

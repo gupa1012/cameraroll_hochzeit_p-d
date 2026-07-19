@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node --test",
+    "test": "node --test --test-concurrency=1",
     "loadtest": "node scripts/loadtest.js"
   },
   "dependencies": {
@@ -17,7 +17,7 @@
     "multer": "^2.1.1",
     "qrcode": "^1.5.4",
     "sharp": "^0.33.5",
-    "uuid": "^9.0.1"
+    "stripe": "^22.3.2"
   },
   "engines": {
     "node": ">=22.0.0"

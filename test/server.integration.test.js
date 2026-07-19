@@ -105,6 +105,7 @@ async function startServer() {
       STORAGE_DIR: storageDir,
       DB_PATH: path.join(dataDir, 'platform.sqlite'),
       OPERATOR_PASSWORD: 'operator-secret',
+      ALLOW_FREE_SPACE_CREATION: '1',
       UPLOAD_REQUEST_TIMEOUT_MS: '0',
       UPLOAD_LIMITER_MAX: '0',
       GUEST_ROUTE_LIMITER_MAX: '0',
@@ -253,6 +254,22 @@ test('health endpoint reports ready state for isolated runtime directories', asy
     assert.equal(payload.checks.dataDir.ok, true);
     assert.equal(payload.checks.storageDir.ok, true);
     assert.equal(payload.checks.spacesDir.ok, true);
+
+    const plansResponse = await fetch(`${server.baseUrl}/api/plans`);
+    assert.equal(plansResponse.status, 200);
+    const plans = await plansResponse.json();
+    assert.equal(plans.checkoutEnabled, false);
+    assert.deepEqual(plans.plans.map(plan => plan.id), ['basic', 'premium']);
+
+    const checkoutResponse = await postJson(`${server.baseUrl}/api/checkout/start`, {
+      partnerOneName: 'Anna',
+      partnerTwoName: 'Ben',
+      weddingDate: '2026-05-03',
+      ownerEmail: 'anna@example.com',
+      adminPassword: 'Brautpaar123',
+      plan: 'basic'
+    });
+    assert.equal(checkoutResponse.status, 503);
   } finally {
     await server.stop();
   }
@@ -554,6 +571,13 @@ test('admin and operator flows can be exercised independently', async () => {
     );
     assert.equal(operatorLoginResponse.status, 200);
 
+    const plansResponse = await fetch(`${server.baseUrl}/api/plans`);
+    assert.equal(plansResponse.status, 200);
+    const plansPayload = await plansResponse.json();
+    assert.deepEqual(plansPayload.plans.map(plan => plan.id), ['basic', 'premium']);
+    assert.equal(plansPayload.plans[0].storageLimitBytes, 20 * 1024 ** 3);
+    assert.equal(plansPayload.plans[1].durationMonths, 12);
+
     const spacesResponse = await fetch(`${server.baseUrl}/api/operator/spaces`, {
       headers: { Cookie: operatorCookies.header() }
     });
@@ -635,10 +659,14 @@ test('admin and operator flows can be exercised independently', async () => {
 
     const operatorCreateResponse = await postJson(
       `${server.baseUrl}/api/operator/spaces`,
-      { displayName: 'Operator Space', ownerEmail: 'ops@example.com', adminPassword: 'Operator123' },
+      { displayName: 'Operator Space', ownerEmail: 'ops@example.com', adminPassword: 'Operator123', plan: 'premium' },
       { cookieJar: operatorCookies }
     );
     assert.equal(operatorCreateResponse.status, 201);
+    const operatorCreatePayload = await operatorCreateResponse.json();
+    assert.equal(operatorCreatePayload.space.plan, 'premium');
+    assert.equal(operatorCreatePayload.space.storageLimitBytes, 100 * 1024 ** 3);
+    assert.ok(operatorCreatePayload.space.expiresAt);
 
     const operatorPhotosResponse = await fetch(`${server.baseUrl}/api/operator/spaces/${spaceSummary.id}/photos`, {
       headers: { Cookie: operatorCookies.header() }
